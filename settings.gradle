@@ -1,0 +1,1 @@
+include ':app', ':salvage', ':salvage-processor', ':salvage-core'
