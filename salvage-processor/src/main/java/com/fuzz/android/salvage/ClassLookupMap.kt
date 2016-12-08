@@ -34,13 +34,26 @@ object ClassLookupMap {
             TypeName.get(String::class.java) to "String")
 
     fun valueForType(typeName: TypeName, isSerializable: Boolean): String? {
-        var type = map[typeName]
-        if (type == null) {
-            type = map[typeName.unbox()]
-        }
+        var type = lookupTypeInMap(typeName)
         // if serializable last and not specified, get the name for serializable
         if (type == null && isSerializable) {
             type = map[TypeName.get(Serializable::class.java)]
+        }
+        return type
+    }
+
+    fun hasType(typeName: TypeName): Boolean {
+        return lookupTypeInMap(typeName) != null
+    }
+
+    private fun lookupTypeInMap(typeName: TypeName): String? {
+        var type = map[typeName]
+        if (type == null) {
+            try {
+                type = map[typeName.unbox()]
+            } catch (u: UnsupportedOperationException) {
+                // ignore
+            }
         }
         return type
     }

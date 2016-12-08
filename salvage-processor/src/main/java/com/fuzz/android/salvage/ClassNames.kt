@@ -8,6 +8,10 @@ import com.squareup.javapoet.ClassName
  * @author Andrew Grosner (Fuzz)
  */
 
+val PACKAGE = "com.fuzz.android.salvage"
+
 val BUNDLE = ClassName.get("android.os", "Bundle")
 
-val BUNDLE_PERSISTER = ClassName.get("com.fuzz.android.salvage", "BundlePersister")
+val BUNDLE_PERSISTER = ClassName.get(PACKAGE, "BundlePersister")
+
+val SALVAGER = ClassName.get(PACKAGE, "Salvager")

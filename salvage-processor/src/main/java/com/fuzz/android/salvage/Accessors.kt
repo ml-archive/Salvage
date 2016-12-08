@@ -5,6 +5,7 @@ import com.raizlabs.android.dbflow.processor.utils.capitalizeFirstLetter
 import com.raizlabs.android.dbflow.processor.utils.lower
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.TypeName
 import java.util.ArrayList
 
 /**
@@ -182,6 +183,48 @@ class PackagePrivateScopeAccessor(propertyName: String, packageName: String,
             if (!list.contains(elementName)) {
                 list.add(elementName)
             }
+        }
+    }
+}
+
+/**
+ * Wraps and casts the existing accessor
+ */
+class SerialiableAccessor(val elementTypeName: TypeName, propertyName: String? = null)
+    : Accessor(propertyName) {
+
+    override fun get(existingBlock: CodeBlock?): CodeBlock {
+        return appendAccess { add("\$L", existingBlock) }
+    }
+
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, isDefault: Boolean): CodeBlock {
+        return appendAccess {
+            if (isDefault) add(existingBlock)
+            else add("(\$T) \$L", elementTypeName, existingBlock)
+        }
+    }
+
+}
+
+class NestedAccessor(val fieldName: String, val elementTypeName: TypeName,
+                     val baseFieldAcessor: Accessor,
+                     propertyName: String? = null) : Accessor(propertyName) {
+    override fun get(existingBlock: CodeBlock?): CodeBlock {
+        return appendAccess {
+            val bundleName = fieldName + "_bundle";
+            addStatement("\$T \$L = new \$T()", BUNDLE, bundleName, BUNDLE)
+            addStatement("\$T.onSaveInstanceState(\$L, \$L)", SALVAGER, existingBlock, bundleName)
+            addStatement("bundle.putBundle($BASE_KEY + \$S, \$L)", fieldName, bundleName)
+        }
+    }
+
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, isDefault: Boolean)
+            : CodeBlock {
+
+        return appendAccess {
+            addStatement("\$T \$L = new \$T()", elementTypeName, fieldName, elementTypeName)
+            addStatement("\$T.onRestoreInstanceState(\$L, \$L)", SALVAGER, fieldName, existingBlock)
+            addStatement(baseFieldAcessor.set(CodeBlock.of(fieldName), baseVariableName))
         }
     }
 }

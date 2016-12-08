@@ -2,6 +2,7 @@ package com.fuzz.android.salvage
 
 import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
 import com.raizlabs.android.dbflow.processor.utils.ElementUtility
+import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterizedTypeName
@@ -11,6 +12,8 @@ import java.io.IOException
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+
+val BASE_KEY = "BASE_KEY"
 
 /**
  * Description:
@@ -55,7 +58,7 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
     override fun onWriteDefinition(typeBuilder: TypeSpec.Builder) {
         super.onWriteDefinition(typeBuilder)
 
-        typeBuilder.addField(FieldSpec.builder(String::class.java, "BASE_KEY", Modifier.PRIVATE, Modifier.FINAL)
+        typeBuilder.addField(FieldSpec.builder(String::class.java, BASE_KEY, Modifier.PRIVATE, Modifier.FINAL)
                 .initializer("\"$packageName.${elementName}Persister:\"")
                 .build())
 
@@ -63,6 +66,11 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addParameter(elementTypeName, defaultParam)
                 .addParameter(BUNDLE, "bundle")
+                .addCode(CodeBlock.builder() // if objects null return
+                        .beginControlFlow("if (bundle == null || \$L == null)", defaultParam)
+                        .addStatement("return")
+                        .endControlFlow()
+                        .build())
 
         persistenceFields.forEach { it.writePersistence(persistMethod) }
 
@@ -72,6 +80,11 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addParameter(elementTypeName, defaultParam)
                 .addParameter(BUNDLE, "bundle")
+                .addCode(CodeBlock.builder() // if objects null return
+                        .beginControlFlow("if (bundle == null || \$L == null)", defaultParam)
+                        .addStatement("return")
+                        .endControlFlow()
+                        .build())
 
         persistenceFields.forEach { it.writeUnpack(unpackMethod) }
 
