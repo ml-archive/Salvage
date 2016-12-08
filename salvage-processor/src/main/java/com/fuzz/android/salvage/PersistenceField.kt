@@ -4,8 +4,10 @@ import com.fuzz.android.salvage.core.Persist
 import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeSpec
 import java.io.Serializable
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
@@ -33,6 +35,8 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     val wrapperAccessor: Accessor?
 
     val nestedAccessor: Accessor?
+
+    val keyFieldName: String
 
     init {
         if (isPackagePrivate) {
@@ -65,40 +69,51 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         wrapperAccessor = if (isSerializable && typeName != null
                 && !ClassLookupMap.hasType(typeName)) SerialiableAccessor(typeName) else null
 
-        nestedAccessor = if (isNested && typeName != null) NestedAccessor(elementName, typeName, accessor) else null
+        keyFieldName = "key_" + elementName
+
+        nestedAccessor = if (isNested && typeName != null) NestedAccessor(elementName, typeName,
+                keyFieldName, accessor) else null
 
         bundleMethodName = if (typeName != null) ClassLookupMap.valueForType(typeName, isSerializable) ?: "" else ""
 
     }
 
-    fun writePersistence(methodBuilder: MethodSpec.Builder) {
+    fun writePersistence(methodBuilder: MethodSpec.Builder, inlineBundles: Boolean) {
         elementTypeName?.let { typeName ->
-            var block = accessor.get(CodeBlock.of(defaultParam))
-            wrapperAccessor?.let { block = wrapperAccessor.get(block) }
+            var block = accessor.get(CodeBlock.of(defaultParam), !inlineBundles)
+            wrapperAccessor?.let { block = wrapperAccessor.get(block, !inlineBundles) }
             if (nestedAccessor != null) {
-                methodBuilder.addCode(nestedAccessor.get(block))
+                methodBuilder.addCode(nestedAccessor.get(block, !inlineBundles))
             } else {
-                methodBuilder.addStatement("bundle.put\$L(\$L + \$S, \$L)",
-                        bundleMethodName, BASE_KEY, bundleKey, block)
+                methodBuilder.addStatement("bundle.put\$L(\$L, \$L)",
+                        bundleMethodName, keyFieldName, block)
             }
         }
     }
 
-    fun writeUnpack(methodBuilder: MethodSpec.Builder) {
+    fun writeUnpack(methodBuilder: MethodSpec.Builder, inlineBundles: Boolean) {
         elementTypeName?.let { typeName ->
             val bundleMethod = if (isNested) ClassLookupMap.map[BUNDLE] else bundleMethodName
-            var block = CodeBlock.of("bundle.get\$L(\$L + \$S)", bundleMethod, BASE_KEY, bundleKey)
-            wrapperAccessor?.let { block = wrapperAccessor.set(block) }
+            var block = CodeBlock.of("bundle.get\$L(\$L)", bundleMethod, keyFieldName)
+            wrapperAccessor?.let { block = wrapperAccessor.set(block, null, !inlineBundles) }
 
             val accessedBlock: CodeBlock;
             if (nestedAccessor == null) {
-                accessedBlock = accessor.set(block, CodeBlock.of(defaultParam))
+                accessedBlock = accessor.set(block, CodeBlock.of(defaultParam), !inlineBundles)
                 methodBuilder.addStatement(accessedBlock)
             } else {
-                accessedBlock = nestedAccessor.set(block, CodeBlock.of(defaultParam))
+                accessedBlock = nestedAccessor.set(block, CodeBlock.of(defaultParam), !inlineBundles)
                 methodBuilder.addCode(accessedBlock)
             }
         }
+    }
+
+    fun writeFieldDefinition(typeBuilder: TypeSpec.Builder) {
+        typeBuilder.addField(FieldSpec.builder(String::class.java, keyFieldName,
+                Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+                .initializer("$BASE_KEY + \$S", elementName)
+                .build())
+
     }
 
 }
