@@ -34,16 +34,24 @@ public class Salvager {
     }
 
     public static <T> void onSaveInstanceState(T obj, Bundle bundle) {
+        onSaveInstanceState(obj, bundle, "");
+    }
+
+    public static <T> void onSaveInstanceState(T obj, Bundle bundle, String uniqueBaseKey) {
         if (obj == null || bundle == null) {
             return;
         }
-        ((BundlePersister<T>) getBundlePersister(obj.getClass())).persist(obj, bundle);
+        ((BundlePersister<T>) getBundlePersister(obj.getClass())).persist(obj, bundle, uniqueBaseKey);
     }
 
     public static <T> void onRestoreInstanceState(T obj, Bundle bundle) {
+        onRestoreInstanceState(obj, bundle, "");
+    }
+
+    public static <T> void onRestoreInstanceState(T obj, Bundle bundle, String uniqueBaseKey) {
         if (obj == null || bundle == null) {
             return;
         }
-        ((BundlePersister<T>) getBundlePersister(obj.getClass())).unpack(obj, bundle);
+        ((BundlePersister<T>) getBundlePersister(obj.getClass())).unpack(obj, bundle, uniqueBaseKey);
     }
 }

@@ -85,8 +85,8 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
             if (nestedAccessor != null) {
                 methodBuilder.addCode(nestedAccessor.get(block, !inlineBundles))
             } else {
-                methodBuilder.addStatement("bundle.put\$L(\$L, \$L)",
-                        bundleMethodName, keyFieldName, block)
+                methodBuilder.addStatement("bundle.put\$L(\$L + \$L, \$L)",
+                        bundleMethodName, uniqueBaseKey, keyFieldName, block)
             }
         }
     }
@@ -94,7 +94,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     fun writeUnpack(methodBuilder: MethodSpec.Builder, inlineBundles: Boolean) {
         elementTypeName?.let { typeName ->
             val bundleMethod = if (isNested) ClassLookupMap.map[BUNDLE] else bundleMethodName
-            var block = CodeBlock.of("bundle.get\$L(\$L)", bundleMethod, keyFieldName)
+            var block = CodeBlock.of("bundle.get\$L(\$L + \$L)", bundleMethod, uniqueBaseKey, keyFieldName)
             wrapperAccessor?.let { block = wrapperAccessor.set(block, null, !inlineBundles) }
 
             val accessedBlock: CodeBlock;

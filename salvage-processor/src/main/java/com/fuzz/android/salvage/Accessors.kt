@@ -212,10 +212,12 @@ class NestedAccessor(val fieldName: String, val elementTypeName: TypeName,
                      propertyName: String? = null) : Accessor(propertyName) {
     override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean): CodeBlock {
         return appendAccess {
-            val bundleName = if (nestedBundles) fieldName + "_bundle" else "bundle";
+            val bundleName = if (nestedBundles) fieldName + "_bundle" else "bundle"
             if (nestedBundles) addStatement("\$T \$L = new \$T()", BUNDLE, bundleName, BUNDLE)
-            addStatement("\$T.onSaveInstanceState(\$L, \$L)", SALVAGER, existingBlock, bundleName)
-            if (nestedBundles) addStatement("bundle.putBundle(\$L, \$L)", elementKeyName, bundleName)
+            addStatement("\$T.onSaveInstanceState(\$L, \$L, \$L + \$S)", SALVAGER, existingBlock,
+                    bundleName, uniqueBaseKey, fieldName)
+            if (nestedBundles) addStatement("bundle.putBundle(\$L, \$L)", elementKeyName,
+                    bundleName)
         }
     }
 
@@ -224,8 +226,8 @@ class NestedAccessor(val fieldName: String, val elementTypeName: TypeName,
 
         return appendAccess {
             addStatement("\$T \$L = new \$T()", elementTypeName, fieldName, elementTypeName)
-            addStatement("\$T.onRestoreInstanceState(\$L, \$L)", SALVAGER, fieldName,
-                    if (nestedBundles) existingBlock else "bundle")
+            addStatement("\$T.onRestoreInstanceState(\$L, \$L, \$L + \$S)", SALVAGER, fieldName,
+                    if (nestedBundles) existingBlock else "bundle", uniqueBaseKey, fieldName)
             addStatement(baseFieldAcessor.set(CodeBlock.of(fieldName), baseVariableName))
         }
     }

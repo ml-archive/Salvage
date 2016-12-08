@@ -16,6 +16,8 @@ import javax.lang.model.element.TypeElement
 
 val BASE_KEY = "BASE_KEY"
 
+val uniqueBaseKey = "uniqueBaseKey"
+
 /**
  * Description:
  *
@@ -79,6 +81,7 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addParameter(elementTypeName, defaultParam)
                 .addParameter(BUNDLE, "bundle")
+                .addParameter(String::class.java, uniqueBaseKey)
                 .addCode(CodeBlock.builder() // if objects null return
                         .beginControlFlow("if (bundle == null || \$L == null)", defaultParam)
                         .addStatement("return")
@@ -93,6 +96,7 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addParameter(elementTypeName, defaultParam)
                 .addParameter(BUNDLE, "bundle")
+                .addParameter(String::class.java, uniqueBaseKey)
                 .addCode(CodeBlock.builder() // if objects null return
                         .beginControlFlow("if (bundle == null || \$L == null)", defaultParam)
                         .addStatement("return")
