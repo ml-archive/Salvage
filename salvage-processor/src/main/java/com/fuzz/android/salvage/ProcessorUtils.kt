@@ -11,6 +11,8 @@ import java.io.IOException
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.TypeMirror
+import javax.tools.Diagnostic
 
 val defaultParam = "obj"
 
@@ -104,4 +106,31 @@ fun writeBaseDefinition(baseDefinition: BaseDefinition, processorManager: Proces
     }
 
     return success
+}
+
+/**
+ * Whether the specified element is assignable to the fqTn parameter
+
+ * @param processingEnvironment The environment this runs in
+ * *
+ * @param fqTn                  THe fully qualified type name of the element we want to check
+ * *
+ * @param element               The element to check that implements
+ * *
+ * @return true if element implements the fqTn
+ */
+fun implementsClass(processingEnvironment: ProcessingEnvironment, fqTn: String, element: TypeElement?): Boolean {
+    val typeElement = processingEnvironment.elementUtils.getTypeElement(fqTn)
+    if (typeElement == null) {
+        processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "Type Element was null for: " + fqTn + "" +
+                "ensure that the visibility of the class is not private.")
+        return false
+    } else {
+        var classMirror: TypeMirror? = typeElement.asType()
+        if (classMirror != null) {
+            classMirror = processingEnvironment.typeUtils.erasure(classMirror)
+        }
+        return classMirror != null && element != null && element.asType() != null &&
+                processingEnvironment.typeUtils.isAssignable(element.asType(), classMirror)
+    }
 }

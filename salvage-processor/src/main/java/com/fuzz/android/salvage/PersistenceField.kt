@@ -5,6 +5,7 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeName
+import java.io.Serializable
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -21,6 +22,8 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     val accessor: Accessor
 
     val bundleKey: String
+
+    var isSerializable: Boolean = false
 
     init {
         if (isPackagePrivate) {
@@ -42,12 +45,15 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
         // for now, later we can configure
         bundleKey = elementName
+
+        isSerializable = implementsClass(manager.processingEnvironment,
+                Serializable::class.java.name, typeElement)
     }
 
     fun writePersistence(methodBuilder: MethodSpec.Builder) {
         elementTypeName?.let { typeName ->
             methodBuilder.addStatement("bundle.put\$L(\$L + \$S, ${accessor.get(CodeBlock.of(defaultParam))})",
-                    ClassLookupMap.valueForType(typeName), "BASE_KEY", bundleKey)
+                    ClassLookupMap.valueForType(typeName, isSerializable), "BASE_KEY", bundleKey)
         }
     }
 
@@ -55,7 +61,8 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         elementTypeName?.let { typeName ->
             methodBuilder.addStatement("${accessor.set(
                     CodeBlock.of("bundle.get\$L(\$L + \$S)",
-                            ClassLookupMap.valueForType(typeName), "BASE_KEY", bundleKey),
+                            ClassLookupMap.valueForType(typeName, isSerializable),
+                            "BASE_KEY", bundleKey),
                     CodeBlock.of(defaultParam))}")
         }
     }

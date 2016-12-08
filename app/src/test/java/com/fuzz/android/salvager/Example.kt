@@ -9,4 +9,5 @@ import com.fuzz.android.salvage.core.Persist
  */
 @Persist
 data class Example(var name: String,
-                   var age: Int?)
+                   var age: Int?,
+                   var charSequence: Array<CharSequence>? = null)
