@@ -2,6 +2,7 @@ package com.fuzz.android.salvage
 
 import com.squareup.javapoet.ArrayTypeName
 import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.WildcardTypeName
 import java.io.Serializable
 
 /**
@@ -34,7 +35,11 @@ object ClassLookupMap {
             TypeName.get(String::class.java) to "String")
 
     fun valueForType(typeName: TypeName, isSerializable: Boolean): String? {
-        var type = lookupTypeInMap(typeName)
+        var newTypeName = typeName
+        if (typeName is WildcardTypeName) {
+            newTypeName = typeName.upperBounds[0]
+        }
+        var type = lookupTypeInMap(newTypeName)
         // if serializable last and not specified, get the name for serializable
         if (type == null && isSerializable) {
             type = map[TypeName.get(Serializable::class.java)]

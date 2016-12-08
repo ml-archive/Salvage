@@ -8,6 +8,7 @@ import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import java.io.IOException
+import java.io.Serializable
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -134,3 +135,6 @@ fun implementsClass(processingEnvironment: ProcessingEnvironment, fqTn: String, 
                 processingEnvironment.typeUtils.isAssignable(element.asType(), classMirror)
     }
 }
+
+fun isSerializable(processorManager: ProcessorManager, element: TypeElement?)
+        = implementsClass(processorManager.processingEnvironment, Serializable::class.java.name, element)

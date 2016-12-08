@@ -20,3 +20,8 @@ class SimpleSerializable : Serializable {
 
 @Persist
 data class ParentObject(var example: Example?)
+
+@Persist
+data class ListExample(var list: List<ParentObject>,
+                       var listString: List<String>,
+                       var listSerializable: List<Serializable>)

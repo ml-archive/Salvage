@@ -232,3 +232,36 @@ class NestedAccessor(val fieldName: String, val elementTypeName: TypeName,
         }
     }
 }
+
+class ListAccessor(val fieldName: String, val elementTypeName: TypeName,
+                   val componentTypeName: TypeName?,
+                   val processorManager: ProcessorManager,
+                   propertyName: String? = null) : Accessor(propertyName) {
+
+    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean): CodeBlock {
+        return appendAccess {
+            addStatement("\$T \$L = \$L", elementTypeName, fieldName, existingBlock)
+            beginControlFlow("if (\$L != null)", fieldName)
+            addStatement("int count = \$L.size()", fieldName)
+            addStatement("bundle.putInt(\$L + \$S + \$S, count)", uniqueBaseKey, ":" + fieldName, ":count")
+            beginControlFlow("for (int i = 0; i < count; i++)")
+            val bundleMethod = if (componentTypeName != null) {
+                ClassLookupMap.valueForType(componentTypeName,
+                        isSerializable(processorManager, processorManager.elements.getTypeElement(componentTypeName.toString())))
+            } else {
+                ""
+            }
+            addStatement("bundle.put\$L(\$L + \$S + \$L, \$L.get(i))", bundleMethod,
+                    uniqueBaseKey, ":" + fieldName, "i", fieldName)
+
+            endControlFlow()
+            endControlFlow()
+        }
+    }
+
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, nestedBundles: Boolean): CodeBlock {
+        return appendAccess {
+            addStatement("\$T \$L = new \$T<>()", elementTypeName, fieldName, TypeName.get(ArrayList::class.java))
+        }
+    }
+}

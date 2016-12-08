@@ -6,9 +6,9 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
-import java.io.Serializable
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -38,6 +38,10 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
     val keyFieldName: String
 
+    val isList: Boolean
+
+    var componentTypeName: TypeName? = null
+
     init {
         if (isPackagePrivate) {
             accessor = PackagePrivateScopeAccessor(elementName, packageName,
@@ -59,11 +63,18 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         // for now, later we can configure
         bundleKey = elementName
 
-        val typeElement: TypeElement? = manager.elements.getTypeElement(elementTypeName.toString())
-        isSerializable = implementsClass(manager.processingEnvironment,
-                Serializable::class.java.name, typeElement)
+        var typeElement: TypeElement? = manager.elements.getTypeElement(elementTypeName.toString())
+        if (typeElement == null && erasedTypeName != null) {
+            typeElement = manager.elements.getTypeElement(erasedTypeName.toString())
+        }
+        isSerializable = isSerializable(manager, typeElement)
 
         isNested = typeElement != null && typeElement.getAnnotation(Persist::class.java) != null
+        isList = implementsClass(manager.processingEnvironment, List::class.java.name, typeElement)
+
+        if (isList) {
+            componentTypeName = (elementTypeName as ParameterizedTypeName).typeArguments[0]
+        }
 
         val typeName = elementTypeName
         wrapperAccessor = if (isSerializable && typeName != null
@@ -71,8 +82,14 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
         keyFieldName = "key_" + elementName
 
-        nestedAccessor = if (isNested && typeName != null) NestedAccessor(elementName, typeName,
-                keyFieldName, accessor) else null
+        nestedAccessor = if (isNested && typeName != null) {
+            NestedAccessor(elementName, typeName,
+                    keyFieldName, accessor)
+        } else if (isList && typeName != null) {
+            ListAccessor(elementName, typeName, componentTypeName, manager)
+        } else {
+            null
+        }
 
         bundleMethodName = if (typeName != null) ClassLookupMap.valueForType(typeName, isSerializable) ?: "" else ""
 
