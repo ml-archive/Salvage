@@ -18,6 +18,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
 }
 
 dependencies {
@@ -34,8 +37,12 @@ dependencies {
     testCompile project(":salvage-core")
 
     testCompile "org.robolectric:robolectric:3.1.4"
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
 kapt {
     generateStubs = true
+}
+repositories {
+    mavenCentral()
 }

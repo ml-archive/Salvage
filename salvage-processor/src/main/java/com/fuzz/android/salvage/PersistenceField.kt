@@ -2,13 +2,7 @@ package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
 import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
-import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.FieldSpec
-import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterizedTypeName
-import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeSpec
+import com.squareup.javapoet.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -41,6 +35,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     val isList: Boolean
 
     var componentTypeName: TypeName? = null
+    var componentElement: TypeElement? = null
 
     init {
         if (isPackagePrivate) {
@@ -67,40 +62,53 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         if (typeElement == null && erasedTypeName != null) {
             typeElement = manager.elements.getTypeElement(erasedTypeName.toString())
         }
-        isSerializable = isSerializable(manager, typeElement)
 
-        isNested = typeElement != null && typeElement.getAnnotation(Persist::class.java) != null
+
         isList = implementsClass(manager.processingEnvironment, List::class.java.name, typeElement)
 
         if (isList) {
             componentTypeName = (elementTypeName as ParameterizedTypeName).typeArguments[0]
+            componentElement = manager.elements.getTypeElement(componentTypeName.toString())
+
+            val compTypeName = componentTypeName
+            if (compTypeName != null && compTypeName is WildcardTypeName) {
+                componentTypeName = compTypeName.upperBounds[0]
+            }
         }
 
+        val basicTypeName = if (isList) componentTypeName else elementTypeName
+        val basicElement = if (isList) componentElement else typeElement
+
+        isNested = basicElement != null && basicElement.getAnnotation(Persist::class.java) != null
+        isSerializable = isSerializable(manager, basicElement)
+
         val typeName = elementTypeName
-        wrapperAccessor = if (isSerializable && typeName != null
-                && !ClassLookupMap.hasType(typeName)) SerialiableAccessor(typeName) else null
+        wrapperAccessor = if (isSerializable && basicTypeName != null
+                && !ClassLookupMap.hasType(basicTypeName)) SerializableAccessor(basicTypeName) else null
 
         keyFieldName = "key_" + elementName
 
-        nestedAccessor = if (isNested && typeName != null) {
+        bundleMethodName = if (basicTypeName != null) ClassLookupMap.valueForType(basicTypeName, isSerializable) ?: "" else ""
+
+        nestedAccessor = if (isNested && !isList && typeName != null) {
             NestedAccessor(elementName, typeName,
                     keyFieldName, accessor)
         } else if (isList && typeName != null) {
-            ListAccessor(elementName, typeName, componentTypeName, manager)
+            ListAccessor(elementName, typeName, bundleMethodName, keyFieldName, accessor,
+                    componentTypeName, isNested)
         } else {
             null
         }
 
-        bundleMethodName = if (typeName != null) ClassLookupMap.valueForType(typeName, isSerializable) ?: "" else ""
 
     }
 
     fun writePersistence(methodBuilder: MethodSpec.Builder, inlineBundles: Boolean) {
         elementTypeName?.let { typeName ->
-            var block = accessor.get(CodeBlock.of(defaultParam), !inlineBundles)
-            wrapperAccessor?.let { block = wrapperAccessor.get(block, !inlineBundles) }
+            var block = accessor.get(CodeBlock.of(defaultParam), !inlineBundles, null)
+            wrapperAccessor?.let { block = wrapperAccessor.get(block, !inlineBundles, null) }
             if (nestedAccessor != null) {
-                methodBuilder.addCode(nestedAccessor.get(block, !inlineBundles))
+                methodBuilder.addCode(nestedAccessor.get(block, !inlineBundles, null))
             } else {
                 methodBuilder.addStatement("bundle.put\$L(\$L + \$L, \$L)",
                         bundleMethodName, uniqueBaseKey, keyFieldName, block)

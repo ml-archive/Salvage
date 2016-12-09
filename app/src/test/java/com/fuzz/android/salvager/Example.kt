@@ -19,9 +19,9 @@ class SimpleSerializable : Serializable {
 }
 
 @Persist
-data class ParentObject(var example: Example?)
+data class ParentObject(var example: Example? = null)
 
 @Persist
-data class ListExample(var list: List<ParentObject>,
-                       var listString: List<String>,
-                       var listSerializable: List<Serializable>)
+data class ListExample(var list: List<ParentObject> = arrayListOf(),
+                       var listString: List<String> = arrayListOf(),
+                       var listSerializable: List<SimpleSerializable> = arrayListOf())
