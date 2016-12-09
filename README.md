@@ -106,7 +106,7 @@ Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
 4. We also support private fields (with getter/setters), package private fields  in same package (or not via `PersistHelper`), and public
 5. Inherited fields are collected as well.
 
-. ## Advanced Features
+## Advanced Features
 
 ### Ignoring Fields
 
