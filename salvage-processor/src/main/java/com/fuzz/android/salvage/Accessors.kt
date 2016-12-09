@@ -6,7 +6,7 @@ import com.raizlabs.android.dbflow.processor.utils.lower
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.TypeName
-import java.util.*
+import java.util.ArrayList
 
 /**
  * Description: Base interface for accessing fields
@@ -255,12 +255,13 @@ class ListAccessor(val fieldName: String, val elementTypeName: TypeName,
                    val bundleMethodName: String,
                    val elementKeyName: String,
                    val baseFieldAcessor: Accessor,
+                   val wrapperAccessor: Accessor?,
                    val componentTypeName: TypeName?,
                    val isNested: Boolean,
                    propertyName: String? = null) : Accessor(propertyName) {
 
-    val nestedAccessor = NestedAccessor(fieldName, elementTypeName, elementKeyName,
-            baseFieldAcessor)
+    val nestedAccessor = NestedAccessor("item", componentTypeName ?: elementTypeName, elementKeyName,
+            NestedListItemAccessor(fieldName))
 
     override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
         return appendAccess {
@@ -274,8 +275,12 @@ class ListAccessor(val fieldName: String, val elementTypeName: TypeName,
                 add(nestedAccessor.get(CodeBlock.of("\$L.get(i)", fieldName), nestedBundles,
                         "$elementKeyName + i"))
             } else {
-                addStatement("bundle.put\$L(\$L + \$L + \$L, \$L.get(i))", bundleMethodName,
-                        uniqueBaseKey, elementKeyName, "i", fieldName)
+                var block = CodeBlock.of("\$L.get(i)", fieldName)
+                if (wrapperAccessor != null) {
+                    block = wrapperAccessor.get(block, nestedBundles, "")
+                }
+                addStatement("bundle.put\$L(\$L + \$L + \$L, \$L)", bundleMethodName,
+                        uniqueBaseKey, elementKeyName, "i", block)
             }
 
             endControlFlow()
@@ -291,16 +296,35 @@ class ListAccessor(val fieldName: String, val elementTypeName: TypeName,
             addStatement("\$T \$L = new \$T<>()", elementTypeName, fieldName, TypeName.get(ArrayList::class.java))
             beginControlFlow("for (int i = 0; i < \$Lcount; i++)", fieldName)
             if (isNested) {
-                addStatement("\$T \$L = new \$T()", componentTypeName, "item", componentTypeName)
+                add(nestedAccessor.set(CodeBlock.of("item"), CodeBlock.of(defaultParam)))
             } else {
-                addStatement("\$T \$L = bundle.get\$L(\$L + \$L + \$L)", componentTypeName, "item",
+                var block = CodeBlock.of("bundle.get\$L(\$L + \$L + \$L)",
                         bundleMethodName, uniqueBaseKey, elementKeyName, "i")
+                if (wrapperAccessor != null) {
+                    block = wrapperAccessor.set(block)
+                }
+
+                addStatement("\$T \$L = \$L", componentTypeName, "item", block)
                 beginControlFlow("if (item != null)")
                 addStatement("\$L.add(item)", fieldName)
                 endControlFlow()
             }
             endControlFlow()
+            addStatement(baseFieldAcessor.set(CodeBlock.of(fieldName), baseVariableName))
             endControlFlow()
         }
     }
+}
+
+class NestedListItemAccessor(val fieldName: String, propertyName: String? = null) : Accessor(propertyName) {
+    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
+        return appendAccess { }
+    }
+
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, nestedBundles: Boolean): CodeBlock {
+        return appendAccess {
+            add("\$L.add(\$L)", fieldName, existingBlock)
+        }
+    }
+
 }

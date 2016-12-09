@@ -95,7 +95,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
                     keyFieldName, accessor)
         } else if (isList && typeName != null) {
             ListAccessor(elementName, typeName, bundleMethodName, keyFieldName, accessor,
-                    componentTypeName, isNested)
+                    wrapperAccessor, componentTypeName, isNested)
         } else {
             null
         }
