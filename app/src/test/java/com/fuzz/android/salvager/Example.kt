@@ -1,6 +1,9 @@
 package com.fuzz.android.salvager
 
+import android.os.Bundle
+import com.fuzz.android.salvage.BundlePersister
 import com.fuzz.android.salvage.core.Persist
+import com.fuzz.android.salvage.core.PersistField
 import java.io.Serializable
 
 /**
@@ -9,7 +12,7 @@ import java.io.Serializable
  * @author Andrew Grosner (Fuzz)
  */
 @Persist
-data class Example(var name: String? = null,
+data class Example(@PersistField(bundlePersister = CustomStringPersister::class) var name: String? = null,
                    var age: Int? = null,
                    var charSequence: Array<CharSequence>? = null,
                    var serializable: SimpleSerializable? = null)
@@ -25,3 +28,13 @@ data class ParentObject(var example: Example? = null)
 data class ListExample(var list: List<ParentObject> = arrayListOf(),
                        var listString: List<String> = arrayListOf(),
                        var listSerializable: List<SimpleSerializable> = arrayListOf())
+
+class CustomStringPersister : BundlePersister<String> {
+    override fun persist(obj: String?, bundle: Bundle, uniqueBaseKey: String) {
+        bundle.putString(uniqueBaseKey + "candy", obj)
+    }
+
+    override fun unpack(`object`: String?, bundle: Bundle, uniqueBaseKey: String): String {
+        return bundle.getString(uniqueBaseKey + "candy")
+    }
+}

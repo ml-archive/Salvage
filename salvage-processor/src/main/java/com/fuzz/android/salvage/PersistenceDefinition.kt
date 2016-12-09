@@ -97,13 +97,16 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                 .addParameter(elementTypeName, defaultParam)
                 .addParameter(BUNDLE, "bundle")
                 .addParameter(String::class.java, uniqueBaseKey)
+                .returns(elementTypeName)
                 .addCode(CodeBlock.builder() // if objects null return
                         .beginControlFlow("if (bundle == null || \$L == null)", defaultParam)
-                        .addStatement("return")
+                        .addStatement("return \$L", defaultParam)
                         .endControlFlow()
                         .build())
 
         persistenceFields.forEach { it.writeUnpack(unpackMethod, inlineBundles) }
+
+        unpackMethod.addStatement("return \$L", defaultParam)
 
         typeBuilder.addMethod(unpackMethod.build())
     }
