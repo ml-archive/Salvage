@@ -34,7 +34,8 @@ class PersistenceTest {
     @Test
     fun testCanPersistList() {
 
-        val listExample = ListExample(arrayListOf(ParentObject(Example("Andrew", 20))),
+        val listExample = ListExample(arrayListOf(ParentObject(Example("Andrew", 20)),
+                ParentObject(Example("Andrew2", 25))),
                 arrayListOf("Yellow"), arrayListOf(SimpleSerializable()))
 
         val bundle = Bundle()
@@ -45,6 +46,25 @@ class PersistenceTest {
 
         val parentList = listRestored.list
         assertNotNull(parentList)
-        assertEquals(1, parentList.size)
+        assertEquals(2, parentList.size)
+
+        var example = parentList[0].example
+        assertNotNull(example)
+        assertEquals("Andrew", example?.name)
+        assertEquals(20, example?.age)
+
+        example = parentList[1].example
+        assertNotNull(example)
+        assertEquals("Andrew2", example?.name)
+        assertEquals(25, example?.age)
+
+        val stringList = listRestored.listString
+        assertNotNull(stringList)
+        assertEquals(1, stringList.size)
+        assertEquals("Yellow", stringList[0])
+
+        val serializable = listExample.listSerializable
+        assertEquals(1, serializable.size)
+        assertNotNull(serializable[0])
     }
 }
