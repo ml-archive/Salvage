@@ -244,8 +244,9 @@ class NestedAccessor(val fieldName: String, val elementTypeName: TypeName,
 
         return appendAccess {
             addStatement("\$T \$L = new \$T()", elementTypeName, fieldName, elementTypeName)
-            addStatement("\$T.onRestoreInstanceState(\$L, \$L, \$L + \$S)", SALVAGER, fieldName,
-                    if (nestedBundles) existingBlock else "bundle", uniqueBaseKey, fieldName)
+            addStatement("\$T.onRestoreInstanceState(\$L, \$L, \$L + \$L)", SALVAGER, fieldName,
+                    if (nestedBundles) existingBlock else "bundle", uniqueBaseKey,
+                    baseVariableName ?: "\"$fieldName\"")
             addStatement(baseFieldAcessor.set(CodeBlock.of(fieldName), baseVariableName))
         }
     }
@@ -296,7 +297,7 @@ class ListAccessor(val fieldName: String, val elementTypeName: TypeName,
             addStatement("\$T \$L = new \$T<>()", elementTypeName, fieldName, TypeName.get(ArrayList::class.java))
             beginControlFlow("for (int i = 0; i < \$Lcount; i++)", fieldName)
             if (isNested) {
-                add(nestedAccessor.set(CodeBlock.of("item"), CodeBlock.of(defaultParam)))
+                add(nestedAccessor.set(CodeBlock.of("item"), CodeBlock.of("$elementKeyName + i")))
             } else {
                 var block = CodeBlock.of("bundle.get\$L(\$L + \$L + \$L)",
                         bundleMethodName, uniqueBaseKey, elementKeyName, "i")
