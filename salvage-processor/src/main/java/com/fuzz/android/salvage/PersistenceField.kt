@@ -105,10 +105,10 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         }
 
         nestedAccessor = if (isNested && !isList && typeName != null) {
-            NestedAccessor(elementName, persisterFieldName, keyFieldName,
+            NestedAccessor(persisterFieldName, keyFieldName,
                     accessor)
         } else if (isList && typeName != null) {
-            ListAccessor(keyFieldName, accessor, persisterFieldName, componentTypeName)
+            ListAccessor(keyFieldName, accessor, persisterFieldName)
         } else {
             null
         }

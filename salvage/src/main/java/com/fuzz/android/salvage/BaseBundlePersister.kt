@@ -15,9 +15,7 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
         if (list != null) {
             val count = list.size
             bundle.putInt(uniqueBaseKey + fieldKey + ":count", count)
-            for (i in 0..count - 1) {
-                bundlePersister.persist(list[i], bundle, uniqueBaseKey + fieldKey + i)
-            }
+            (0..count - 1).forEach { i -> bundlePersister.persist(list[i], bundle, uniqueBaseKey + fieldKey + i) }
         }
     }
 
@@ -25,14 +23,46 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
                                         fieldKey: String, bundlePersister: BundlePersister<T>): List<T>? {
         val count = bundle.getInt(uniqueBaseKey + fieldKey + ":count", 0)
         if (count > 0) {
-            val list = ArrayList<T>()
-            for (i in 0..count - 1) {
-                val item = bundlePersister.unpack(null, bundle, uniqueBaseKey + fieldKey + i)
-                if (item != null) {
-                    list.add(item)
+            return (0..count - 1).mapNotNull { bundlePersister.unpack(null, bundle, uniqueBaseKey + fieldKey + it) }
+        }
+        return null
+    }
+
+    protected fun <K : Any, V : Any> persistMap(
+            map: Map<K, V?>?, bundle: Bundle, uniqueBaseKey: String,
+            fieldKey: String,
+            keyBundlePersister: BundlePersister<K>,
+            variableBundlePersister: BundlePersister<V>): Map<K, V?>? {
+        if (map != null) {
+            val count = map.size
+            bundle.putInt(uniqueBaseKey + fieldKey + ":count", count)
+            val entries = ArrayList(map.entries)
+            (0..count - 1).forEach {
+                val (key, value) = entries[it]
+                keyBundlePersister.persist(key, bundle, uniqueBaseKey + fieldKey + it + ":key")
+                variableBundlePersister.persist(value, bundle, uniqueBaseKey + fieldKey + it + ":value")
+            }
+        }
+        return map
+    }
+
+    protected fun <K : Any, V : Any> restoreMap(
+            bundle: Bundle, uniqueBaseKey: String,
+            fieldKey: String,
+            keyBundlePersister: BundlePersister<K>,
+            variableBundlePersister: BundlePersister<V>): Map<K, V?>? {
+        val count = bundle.getInt(uniqueBaseKey + fieldKey + ":count", 0)
+        if (count > 0) {
+            val map: MutableMap<K, V?> = mutableMapOf()
+            (0..count - 1).forEach {
+                val key = keyBundlePersister.unpack(null, bundle, uniqueBaseKey + fieldKey + it + ":key")
+                if (key != null) {
+                    val value = variableBundlePersister.unpack(null, bundle,
+                            uniqueBaseKey + fieldKey + it + ":value")
+                    map.put(key, value)
                 }
             }
-            return list
+            return map
         }
         return null
     }

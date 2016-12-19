@@ -218,8 +218,7 @@ class NormalAccessor(val bundleMethodName: String, val keyFieldName: String, pro
 
 }
 
-class NestedAccessor(val fieldName: String,
-                     val persisterFieldName: String,
+class NestedAccessor(val persisterFieldName: String,
                      val keyFieldName: String,
                      val baseFieldAcessor: Accessor,
                      propertyName: String? = null) : Accessor(propertyName) {
@@ -242,15 +241,14 @@ class NestedAccessor(val fieldName: String,
     }
 }
 
-class ListAccessor(val elementKeyName: String,
+class ListAccessor(val keyFieldName: String,
                    val baseFieldAcessor: Accessor,
                    val persisterFieldName: String,
-                   val componentTypeName: TypeName?,
                    propertyName: String? = null) : Accessor(propertyName) {
 
     override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return appendAccess {
-            addStatement("persistList(\$L, bundle, $uniqueBaseKey, $elementKeyName, " +
+            addStatement("persistList(\$L, bundle, $uniqueBaseKey, $keyFieldName, " +
                     "$persisterFieldName)", existingBlock)
         }
     }
@@ -258,7 +256,7 @@ class ListAccessor(val elementKeyName: String,
     override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return appendAccess {
             addStatement(baseFieldAcessor.set(
-                    CodeBlock.of("restoreList(bundle, $uniqueBaseKey, $elementKeyName, " +
+                    CodeBlock.of("restoreList(bundle, $uniqueBaseKey, $keyFieldName, " +
                             "$persisterFieldName)"),
                     baseVariableName))
         }
