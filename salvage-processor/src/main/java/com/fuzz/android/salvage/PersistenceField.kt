@@ -37,6 +37,12 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     var componentTypeName: TypeName? = null
     var componentElement: TypeElement? = null
 
+    val basicTypeName: TypeName?
+    val basicElement: Element?
+
+    val persisterFieldName: String
+    val persisterDefinitionTypeName: TypeName
+
     init {
         if (isPackagePrivate) {
             accessor = PackagePrivateScopeAccessor(elementName, packageName,
@@ -76,26 +82,33 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
             }
         }
 
-        val basicTypeName = if (isList) componentTypeName else elementTypeName
-        val basicElement = if (isList) componentElement else typeElement
+        basicTypeName = if (isList) componentTypeName else elementTypeName
+        basicElement = if (isList) componentElement else typeElement
 
         isNested = basicElement != null && basicElement.getAnnotation(Persist::class.java) != null
-        isSerializable = isSerializable(manager, basicElement)
+        isSerializable = isSerializable(manager, basicElement) && (basicTypeName != null
+                && !ClassLookupMap.hasType(basicTypeName) || isList)
 
         val typeName = elementTypeName
-        wrapperAccessor = if (isSerializable && basicTypeName != null
-                && !ClassLookupMap.hasType(basicTypeName)) SerializableAccessor(basicTypeName) else null
+        wrapperAccessor = if (isSerializable && basicTypeName != null) SerializableAccessor(basicTypeName) else null
 
         keyFieldName = "key_" + elementName
 
         bundleMethodName = if (basicTypeName != null) ClassLookupMap.valueForType(basicTypeName, isSerializable) ?: "" else ""
 
+        if (isSerializable || isNested) {
+            persisterFieldName = elementName + "_persister"
+            persisterDefinitionTypeName = ParameterizedTypeName.get(BUNDLE_PERSISTER, basicTypeName)
+        } else {
+            persisterFieldName = ""
+            persisterDefinitionTypeName = ClassName.OBJECT
+        }
+
         nestedAccessor = if (isNested && !isList && typeName != null) {
-            NestedAccessor(elementName, typeName,
-                    keyFieldName, accessor)
+            NestedAccessor(elementName, persisterFieldName, keyFieldName,
+                    accessor)
         } else if (isList && typeName != null) {
-            ListAccessor(elementName, typeName, bundleMethodName, keyFieldName, accessor,
-                    wrapperAccessor, componentTypeName, isNested)
+            ListAccessor(keyFieldName, accessor, persisterFieldName, componentTypeName)
         } else {
             null
         }
@@ -103,12 +116,12 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
     }
 
-    fun writePersistence(methodBuilder: MethodSpec.Builder, inlineBundles: Boolean) {
+    fun writePersistence(methodBuilder: MethodSpec.Builder) {
         elementTypeName?.let { typeName ->
-            var block = accessor.get(CodeBlock.of(defaultParam), !inlineBundles, null)
-            wrapperAccessor?.let { block = wrapperAccessor.get(block, !inlineBundles, null) }
+            var block = accessor.get(CodeBlock.of(defaultParam), null)
+            wrapperAccessor?.let { block = wrapperAccessor.get(block, null) }
             if (nestedAccessor != null) {
-                methodBuilder.addCode(nestedAccessor.get(block, !inlineBundles, null))
+                methodBuilder.addCode(nestedAccessor.get(block, null))
             } else {
                 methodBuilder.addStatement("bundle.put\$L(\$L + \$L, \$L)",
                         bundleMethodName, uniqueBaseKey, keyFieldName, block)
@@ -116,29 +129,43 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         }
     }
 
-    fun writeUnpack(methodBuilder: MethodSpec.Builder, inlineBundles: Boolean) {
+    fun writeUnpack(methodBuilder: MethodSpec.Builder) {
         elementTypeName?.let { typeName ->
             val bundleMethod = if (isNested) ClassLookupMap.map[BUNDLE] else bundleMethodName
             var block = CodeBlock.of("bundle.get\$L(\$L + \$L)", bundleMethod, uniqueBaseKey, keyFieldName)
-            wrapperAccessor?.let { block = wrapperAccessor.set(block, null, !inlineBundles) }
+            wrapperAccessor?.let { block = wrapperAccessor.set(block, null) }
 
             val accessedBlock: CodeBlock;
             if (nestedAccessor == null) {
-                accessedBlock = accessor.set(block, CodeBlock.of(defaultParam), !inlineBundles)
+                accessedBlock = accessor.set(block, CodeBlock.of(defaultParam))
                 methodBuilder.addStatement(accessedBlock)
             } else {
-                accessedBlock = nestedAccessor.set(block, CodeBlock.of(defaultParam), !inlineBundles)
+                accessedBlock = nestedAccessor.set(block, CodeBlock.of(defaultParam))
                 methodBuilder.addCode(accessedBlock)
             }
         }
     }
 
-    fun writeFieldDefinition(typeBuilder: TypeSpec.Builder) {
+    fun writeForConstructor(constructorCode: MethodSpec.Builder) {
+        if (isNested) {
+            constructorCode.addStatement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
+                    persisterFieldName, SALVAGER, basicElement))
+        } else if (isSerializable) {
+            constructorCode.addStatement(CodeBlock.of("\$L = new \$T()", persisterFieldName,
+                    ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)))
+        }
+    }
+
+    fun writeFields(typeBuilder: TypeSpec.Builder) {
         typeBuilder.addField(FieldSpec.builder(String::class.java, keyFieldName,
                 Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
                 .initializer("$BASE_KEY + \$S", elementName)
                 .build())
 
+        if (isSerializable || isNested) {
+            typeBuilder.addField(persisterDefinitionTypeName, persisterFieldName,
+                    Modifier.PRIVATE, Modifier.FINAL)
+        }
     }
 
 }

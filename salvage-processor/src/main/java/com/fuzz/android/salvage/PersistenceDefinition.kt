@@ -3,12 +3,7 @@ package com.fuzz.android.salvage
 import com.fuzz.android.salvage.core.Persist
 import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
 import com.raizlabs.android.dbflow.processor.utils.ElementUtility
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.FieldSpec
-import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterizedTypeName
-import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeSpec
+import com.squareup.javapoet.*
 import java.io.IOException
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
@@ -28,17 +23,10 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
 
     val persistenceFields: MutableList<PersistenceField> = arrayListOf()
 
-    val inlineBundles: Boolean
-
     init {
         setOutputClassName("Persister")
 
         val persistenceAnnotation: Persist? = typeElement.getAnnotation(Persist::class.java)
-        if (persistenceAnnotation != null) {
-            inlineBundles = persistenceAnnotation.inlineBundles;
-        } else {
-            inlineBundles = true;
-        }
 
         val elements = ElementUtility.getAllElements(typeElement, manager)
 
@@ -64,8 +52,8 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
         writePackageHelper(processingEnvironment, this, persistenceFields, manager)
     }
 
-    override val implementsClasses: Array<TypeName>
-        get() = arrayOf(ParameterizedTypeName.get(BUNDLE_PERSISTER, elementTypeName))
+    override val extendsClass: TypeName?
+        get() = ParameterizedTypeName.get(BASE_BUNDLE_PERSISTER, elementTypeName)
 
     override fun onWriteDefinition(typeBuilder: TypeSpec.Builder) {
         super.onWriteDefinition(typeBuilder)
@@ -75,7 +63,14 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                 .initializer("\"$packageName.${elementName}Persister:\"")
                 .build())
 
-        persistenceFields.forEach { it.writeFieldDefinition(typeBuilder) }
+        persistenceFields.forEach { it.writeFields(typeBuilder) }
+
+        val constructorCode = MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+
+        persistenceFields.forEach { it.writeForConstructor(constructorCode) }
+
+        typeBuilder.addMethod(constructorCode.build())
 
         val persistMethod = MethodSpec.methodBuilder("persist")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -88,7 +83,7 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                         .endControlFlow()
                         .build())
 
-        persistenceFields.forEach { it.writePersistence(persistMethod, inlineBundles) }
+        persistenceFields.forEach { it.writePersistence(persistMethod) }
 
         typeBuilder.addMethod(persistMethod.build())
 
@@ -99,12 +94,15 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                 .addParameter(String::class.java, uniqueBaseKey)
                 .returns(elementTypeName)
                 .addCode(CodeBlock.builder() // if objects null return
-                        .beginControlFlow("if (bundle == null || \$L == null)", defaultParam)
-                        .addStatement("return \$L", defaultParam)
+                        .beginControlFlow("if (bundle == null)")
+                        .addStatement("return null")
+                        .endControlFlow()
+                        .beginControlFlow("if ($defaultParam == null)")
+                        .addStatement("$defaultParam = new \$T()", elementTypeName)
                         .endControlFlow()
                         .build())
 
-        persistenceFields.forEach { it.writeUnpack(unpackMethod, inlineBundles) }
+        persistenceFields.forEach { it.writeUnpack(unpackMethod) }
 
         unpackMethod.addStatement("return \$L", defaultParam)
 

@@ -1,7 +1,7 @@
 package com.fuzz.android.salvage
 
 import android.os.Bundle
-import java.util.HashMap
+import java.io.Serializable
 
 @Suppress("UNCHECKED_CAST")
 /**
@@ -10,7 +10,18 @@ import java.util.HashMap
  */
 object Salvager {
 
-    private val persisterMap = HashMap<Class<*>, BundlePersister<*>>()
+    private val persisterMap: MutableMap<Class<*>, BundlePersister<*>>
+            = mutableMapOf(Int::class.java to IntPersister(),
+            Double::class.java to DoublePersister(),
+            Float::class.java to FloatPersister(),
+            Char::class.java to CharPersister(),
+            Short::class.java to ShortPersister(),
+            Byte::class.java to BytePersister(),
+            Long::class.java to LongPersister(),
+            Bundle::class.java to BundleBundlePersister(),
+            CharSequence::class.java to CharSequencePersister(),
+            String::class.java to StringPersister(),
+            Serializable::class.java to SerializablePersister<Serializable>())
 
     /**
      * Attempts to retrieve the [BundlePersister] if one exists for this class. If the [BundlePersister]
@@ -26,7 +37,8 @@ object Salvager {
                 persister = Class.forName(tClass.name + "Persister")
                         .newInstance() as BundlePersister<*>
             } catch (e: Exception) {
-                throw RuntimeException("Could not find generated BundlePersister for: \$clazz. Ensure " + "you specified the @Persist annotation.")
+                throw RuntimeException("Could not find generated BundlePersister for: $tClass. " +
+                        "Ensure you specified the @Persist annotation.")
             }
 
             persisterMap.put(tClass, persister)
@@ -59,11 +71,12 @@ object Salvager {
      * By default you should not use this method without a corresponding call to [onSaveInstanceState]
      */
     @JvmStatic
-    fun <T : Any> onRestoreInstanceState(obj: T?, bundle: Bundle?, uniqueBaseKey: String = "") {
-        if (obj == null || bundle == null) {
-            return
+    fun <T : Any> onRestoreInstanceState(obj: T?, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
+        return if (obj == null || bundle == null) {
+            null
+        } else {
+            getBundlePersister(obj.javaClass).unpack(obj, bundle, uniqueBaseKey)
         }
-        getBundlePersister(obj.javaClass).unpack(obj, bundle, uniqueBaseKey)
     }
 
 }

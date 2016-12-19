@@ -12,5 +12,5 @@ interface BundlePersister<T> {
 
     fun persist(obj: T?, bundle: Bundle, uniqueBaseKey: String)
 
-    fun unpack(`object`: T?, bundle: Bundle, uniqueBaseKey: String): T
+    fun unpack(`object`: T?, bundle: Bundle, uniqueBaseKey: String): T?
 }

@@ -6,7 +6,7 @@ import com.raizlabs.android.dbflow.processor.utils.lower
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.TypeName
-import java.util.ArrayList
+import java.util.*
 
 /**
  * Description: Base interface for accessing fields
@@ -17,11 +17,9 @@ abstract class Accessor(val propertyName: String?) {
 
     open val isPrimitiveTarget: Boolean = false
 
-    abstract fun get(existingBlock: CodeBlock? = null, nestedBundles: Boolean = false,
-                     baseVariableName: String?): CodeBlock
+    abstract fun get(existingBlock: CodeBlock? = null, baseVariableName: String?): CodeBlock
 
-    abstract fun set(existingBlock: CodeBlock? = null, baseVariableName: CodeBlock? = null,
-                     nestedBundles: Boolean = false): CodeBlock
+    abstract fun set(existingBlock: CodeBlock? = null, baseVariableName: CodeBlock? = null): CodeBlock
 
     protected fun prependPropertyName(code: CodeBlock.Builder) {
         propertyName?.let {
@@ -53,15 +51,14 @@ interface GetterSetter {
 
 class VisibleScopeAccessor(propertyName: String) : Accessor(propertyName) {
 
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?,
-                     nestedBundles: Boolean): CodeBlock {
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         val codeBlock: CodeBlock.Builder = CodeBlock.builder()
         baseVariableName?.let { codeBlock.add("\$L.", baseVariableName) }
         return codeBlock.add("\$L = \$L", propertyName, existingBlock)
                 .build()
     }
 
-    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         val codeBlock: CodeBlock.Builder = CodeBlock.builder()
         existingBlock?.let { codeBlock.add("\$L.", existingBlock) }
         return codeBlock.add(propertyName)
@@ -90,15 +87,14 @@ class PrivateScopeAccessor : Accessor {
         }
     }
 
-    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         val codeBlock: CodeBlock.Builder = CodeBlock.builder()
         existingBlock?.let { codeBlock.add("\$L.", existingBlock) }
         return codeBlock.add("\$L()", getGetterNameElement())
                 .build()
     }
 
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?,
-                     nestedBundles: Boolean): CodeBlock {
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         val codeBlock: CodeBlock.Builder = CodeBlock.builder()
         baseVariableName?.let { codeBlock.add("\$L.", baseVariableName) }
         return codeBlock.add("\$L(\$L)", getSetterNameElement(), existingBlock)
@@ -148,14 +144,13 @@ class PackagePrivateScopeAccessor(propertyName: String, packageName: String,
         internalHelperClassName = ClassName.get(packageName, "${tableClassName}_$classSuffix")
     }
 
-    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return CodeBlock.of("\$T.get\$L(\$L)", internalHelperClassName,
                 propertyName.capitalizeFirstLetter(),
                 existingBlock)
     }
 
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?,
-                     nestedBundles: Boolean): CodeBlock {
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return CodeBlock.of("\$T.set\$L(\$L, \$L)", helperClassName,
                 propertyName.capitalizeFirstLetter(),
                 baseVariableName,
@@ -194,14 +189,13 @@ class PackagePrivateScopeAccessor(propertyName: String, packageName: String,
 class SerializableAccessor(val elementTypeName: TypeName, propertyName: String? = null)
     : Accessor(propertyName) {
 
-    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return appendAccess { add("\$L", existingBlock) }
     }
 
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, nestedBundles: Boolean): CodeBlock {
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return appendAccess {
-            if (nestedBundles) add(existingBlock)
-            else add("(\$T) \$L", elementTypeName, existingBlock)
+            add("(\$T) \$L", elementTypeName, existingBlock)
         }
     }
 
@@ -209,14 +203,14 @@ class SerializableAccessor(val elementTypeName: TypeName, propertyName: String? 
 
 class NormalAccessor(val bundleMethodName: String, val keyFieldName: String, propertyName: String? = null)
     : Accessor(propertyName) {
-    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return appendAccess {
             addStatement("bundle.put\$L(\$L + \$L, \$L)",
                     bundleMethodName, uniqueBaseKey, keyFieldName, existingBlock)
         }
     }
 
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, nestedBundles: Boolean): CodeBlock {
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return appendAccess {
 
         }
@@ -224,108 +218,50 @@ class NormalAccessor(val bundleMethodName: String, val keyFieldName: String, pro
 
 }
 
-class NestedAccessor(val fieldName: String, val elementTypeName: TypeName,
-                     val elementKeyName: String,
+class NestedAccessor(val fieldName: String,
+                     val persisterFieldName: String,
+                     val keyFieldName: String,
                      val baseFieldAcessor: Accessor,
                      propertyName: String? = null) : Accessor(propertyName) {
-    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return appendAccess {
-            val bundleName = if (nestedBundles) fieldName + "_bundle" else "bundle"
-            if (nestedBundles) addStatement("\$T \$L = new \$T()", BUNDLE, bundleName, BUNDLE)
-            addStatement("\$T.onSaveInstanceState(\$L, \$L, \$L + \$L)", SALVAGER, existingBlock,
-                    bundleName, uniqueBaseKey, baseVariableName ?: "\"$fieldName\"")
-            if (nestedBundles) addStatement("bundle.putBundle(\$L, \$L)", elementKeyName,
-                    bundleName)
+            addStatement("\$L.persist(\$L, bundle, \$L + $keyFieldName)", persisterFieldName,
+                    existingBlock, uniqueBaseKey)
         }
     }
 
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, nestedBundles: Boolean)
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?)
             : CodeBlock {
 
         return appendAccess {
-            addStatement("\$T \$L = new \$T()", elementTypeName, fieldName, elementTypeName)
-            addStatement("\$T.onRestoreInstanceState(\$L, \$L, \$L + \$L)", SALVAGER, fieldName,
-                    if (nestedBundles) existingBlock else "bundle", uniqueBaseKey,
-                    baseVariableName ?: "\"$fieldName\"")
-            addStatement(baseFieldAcessor.set(CodeBlock.of(fieldName), baseVariableName))
+            addStatement(baseFieldAcessor.set(
+                    CodeBlock.of("\$L.unpack(null, bundle, \$L + $keyFieldName)",
+                            persisterFieldName, uniqueBaseKey),
+                    baseVariableName))
         }
     }
 }
 
-class ListAccessor(val fieldName: String, val elementTypeName: TypeName,
-                   val bundleMethodName: String,
-                   val elementKeyName: String,
+class ListAccessor(val elementKeyName: String,
                    val baseFieldAcessor: Accessor,
-                   val wrapperAccessor: Accessor?,
+                   val persisterFieldName: String,
                    val componentTypeName: TypeName?,
-                   val isNested: Boolean,
                    propertyName: String? = null) : Accessor(propertyName) {
 
-    val nestedAccessor = NestedAccessor("item", componentTypeName ?: elementTypeName, elementKeyName,
-            NestedListItemAccessor(fieldName))
-
-    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return appendAccess {
-            addStatement("\$T \$L = \$L", elementTypeName, fieldName, existingBlock)
-            beginControlFlow("if (\$L != null)", fieldName)
-            addStatement("int count = \$L.size()", fieldName)
-            addStatement("bundle.putInt(\$L + \$L + \$S, count)", uniqueBaseKey, elementKeyName, ":count")
-            beginControlFlow("for (int i = 0; i < count; i++)")
-
-            if (isNested) {
-                add(nestedAccessor.get(CodeBlock.of("\$L.get(i)", fieldName), nestedBundles,
-                        "$elementKeyName + i"))
-            } else {
-                var block = CodeBlock.of("\$L.get(i)", fieldName)
-                if (wrapperAccessor != null) {
-                    block = wrapperAccessor.get(block, nestedBundles, "")
-                }
-                addStatement("bundle.put\$L(\$L + \$L + \$L, \$L)", bundleMethodName,
-                        uniqueBaseKey, elementKeyName, "i", block)
-            }
-
-            endControlFlow()
-            endControlFlow()
+            addStatement("persistList(\$L, bundle, $uniqueBaseKey, $elementKeyName, " +
+                    "$persisterFieldName)", existingBlock)
         }
     }
 
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, nestedBundles: Boolean): CodeBlock {
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return appendAccess {
-            addStatement("int \$Lcount = bundle.getInt(\$L + \$L + \$S, 0)", fieldName, uniqueBaseKey,
-                    elementKeyName, ":count")
-            beginControlFlow("if (\$Lcount > 0) ", fieldName)
-            addStatement("\$T \$L = new \$T<>()", elementTypeName, fieldName, TypeName.get(ArrayList::class.java))
-            beginControlFlow("for (int i = 0; i < \$Lcount; i++)", fieldName)
-            if (isNested) {
-                add(nestedAccessor.set(CodeBlock.of("item"), CodeBlock.of("$elementKeyName + i")))
-            } else {
-                var block = CodeBlock.of("bundle.get\$L(\$L + \$L + \$L)",
-                        bundleMethodName, uniqueBaseKey, elementKeyName, "i")
-                if (wrapperAccessor != null) {
-                    block = wrapperAccessor.set(block)
-                }
-
-                addStatement("\$T \$L = \$L", componentTypeName, "item", block)
-                beginControlFlow("if (item != null)")
-                addStatement("\$L.add(item)", fieldName)
-                endControlFlow()
-            }
-            endControlFlow()
-            addStatement(baseFieldAcessor.set(CodeBlock.of(fieldName), baseVariableName))
-            endControlFlow()
+            addStatement(baseFieldAcessor.set(
+                    CodeBlock.of("restoreList(bundle, $uniqueBaseKey, $elementKeyName, " +
+                            "$persisterFieldName)"),
+                    baseVariableName))
         }
     }
 }
 
-class NestedListItemAccessor(val fieldName: String, propertyName: String? = null) : Accessor(propertyName) {
-    override fun get(existingBlock: CodeBlock?, nestedBundles: Boolean, baseVariableName: String?): CodeBlock {
-        return appendAccess { }
-    }
-
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?, nestedBundles: Boolean): CodeBlock {
-        return appendAccess {
-            add("\$L.add(\$L)", fieldName, existingBlock)
-        }
-    }
-
-}
