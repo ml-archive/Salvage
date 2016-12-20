@@ -183,24 +183,6 @@ class PackagePrivateScopeAccessor(propertyName: String, packageName: String,
     }
 }
 
-/**
- * Wraps and casts the existing accessor
- */
-class SerializableAccessor(val elementTypeName: TypeName, propertyName: String? = null)
-    : Accessor(propertyName) {
-
-    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
-        return appendAccess { add("\$L", existingBlock) }
-    }
-
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
-        return appendAccess {
-            add("(\$T) \$L", elementTypeName, existingBlock)
-        }
-    }
-
-}
-
 class NormalAccessor(val bundleMethodName: String, val keyFieldName: String, propertyName: String? = null)
     : Accessor(propertyName) {
     override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
