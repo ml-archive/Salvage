@@ -1,10 +1,10 @@
 package com.fuzz.android.salvage
 
 import android.os.Bundle
-import java.util.*
+import java.util.ArrayList
 
 /**
- * Description:
+ * Description: Provides some helper methods to the implementations in generated code.
  *
  * @author Andrew Grosner (fuzz)
  */
@@ -15,7 +15,7 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
         if (list != null) {
             val count = list.size
             bundle.putInt(uniqueBaseKey + fieldKey + ":count", count)
-            (0..count - 1).forEach { i -> bundlePersister.persist(list[i], bundle, uniqueBaseKey + fieldKey + i) }
+            (0..count - 1).forEach { bundlePersister.persist(list[it], bundle, uniqueBaseKey + fieldKey + it) }
         }
     }
 
@@ -29,8 +29,8 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
     }
 
     protected fun <K : Any, V : Any> persistMap(
-            map: Map<K, V?>?, bundle: Bundle, uniqueBaseKey: String,
-            fieldKey: String,
+            map: Map<K, V?>?, bundle: Bundle,
+            uniqueBaseKey: String, fieldKey: String,
             keyBundlePersister: BundlePersister<K>,
             variableBundlePersister: BundlePersister<V>): Map<K, V?>? {
         if (map != null) {

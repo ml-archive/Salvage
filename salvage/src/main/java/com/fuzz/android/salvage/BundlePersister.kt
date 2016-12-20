@@ -10,7 +10,15 @@ import android.os.Bundle
  */
 interface BundlePersister<T> {
 
+    /**
+     * Called when data is persisted to a [Bundle]. The [uniqueBaseKey] should be appended
+     * first to the custom key you use in the [Bundle].
+     */
     fun persist(obj: T?, bundle: Bundle, uniqueBaseKey: String)
 
+    /**
+     * Called when data is restored. If the [object] is not null, reuse the object if you can
+     * to lessen garbage collection impact.
+     */
     fun unpack(`object`: T?, bundle: Bundle, uniqueBaseKey: String): T?
 }

@@ -1,5 +1,6 @@
 package com.fuzz.android.salvage
 
+import android.os.Build
 import android.os.Bundle
 import java.io.Serializable
 
@@ -89,7 +90,11 @@ class CharSequencePersister : BundlePersister<CharSequence> {
     }
 
     override fun unpack(`object`: CharSequence?, bundle: Bundle, uniqueBaseKey: String): CharSequence? {
-        return bundle.getCharSequence(uniqueBaseKey, `object` ?: "")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
+            return bundle.getCharSequence(uniqueBaseKey, `object` ?: "")
+        } else {
+            return bundle.getCharSequence(uniqueBaseKey)
+        }
     }
 }
 
@@ -99,12 +104,15 @@ class StringPersister : BundlePersister<String> {
     }
 
     override fun unpack(`object`: String?, bundle: Bundle, uniqueBaseKey: String): String? {
-        return bundle.getString(uniqueBaseKey, `object` ?: "")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
+            return bundle.getString(uniqueBaseKey, `object` ?: "")
+        } else {
+            return bundle.getString(uniqueBaseKey)
+        }
     }
 }
 
 class SerializablePersister<T : Serializable> : BundlePersister<T> {
-
     override fun persist(obj: T?, bundle: Bundle, uniqueBaseKey: String) {
         obj?.let { bundle.putSerializable(uniqueBaseKey, obj) }
     }
