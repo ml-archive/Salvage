@@ -263,3 +263,27 @@ class ListAccessor(val keyFieldName: String,
     }
 }
 
+
+class MapAccessor(val keyFieldName: String,
+                  val baseFieldAcessor: Accessor,
+                  val persisterFieldName: String,
+                  val keyPersisterFieldName: String,
+                  propertyName: String? = null) : Accessor(propertyName) {
+
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
+        return appendAccess {
+            addStatement("persistMap(\$L, bundle, $uniqueBaseKey, $keyFieldName, " +
+                    "$keyPersisterFieldName, $persisterFieldName)", existingBlock)
+        }
+    }
+
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
+        return appendAccess {
+            addStatement(baseFieldAcessor.set(
+                    CodeBlock.of("restoreMap(bundle, $uniqueBaseKey, $keyFieldName, " +
+                            "$keyPersisterFieldName, $persisterFieldName)"),
+                    baseVariableName))
+        }
+    }
+}
+

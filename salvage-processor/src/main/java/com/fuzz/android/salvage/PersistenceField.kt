@@ -33,15 +33,20 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     val keyFieldName: String
 
     val isList: Boolean
+    val isMap: Boolean
 
     var componentTypeName: TypeName? = null
     var componentElement: TypeElement? = null
+    var keyTypeName: TypeName? = null
+    var keyElement: TypeElement? = null
 
     val basicTypeName: TypeName?
     val basicElement: Element?
 
     val persisterFieldName: String
     val persisterDefinitionTypeName: TypeName
+    val keyPersisterFieldName: String
+    val keyPersisterDefinitionTypeName: TypeName
 
     init {
         if (isPackagePrivate) {
@@ -71,6 +76,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
 
         isList = implementsClass(manager.processingEnvironment, List::class.java.name, typeElement)
+        isMap = implementsClass(manager.processingEnvironment, Map::class.java.name, typeElement)
 
         if (isList) {
             componentTypeName = (elementTypeName as ParameterizedTypeName).typeArguments[0]
@@ -80,14 +86,31 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
             if (compTypeName != null && compTypeName is WildcardTypeName) {
                 componentTypeName = compTypeName.upperBounds[0]
             }
+        } else if (isMap) {
+            val parametrized = (elementTypeName as ParameterizedTypeName)
+            componentTypeName = parametrized.typeArguments[1]
+            componentElement = manager.elements.getTypeElement(componentTypeName.toString())
+
+            val compTypeName = componentTypeName
+            if (compTypeName != null && compTypeName is WildcardTypeName) {
+                componentTypeName = compTypeName.upperBounds[0]
+            }
+
+            keyTypeName = parametrized.typeArguments[0]
+            keyElement = manager.elements.getTypeElement(keyTypeName.toString())
+
+            val keyTypeName = keyTypeName
+            if (keyTypeName != null && keyTypeName is WildcardTypeName) {
+                this.keyTypeName = keyTypeName.upperBounds[0]
+            }
         }
 
-        basicTypeName = if (isList) componentTypeName else elementTypeName
-        basicElement = if (isList) componentElement else typeElement
+        basicTypeName = if (isList || isMap) componentTypeName else elementTypeName
+        basicElement = if (isList || isMap) componentElement else typeElement
 
         isNested = basicElement != null && basicElement.getAnnotation(Persist::class.java) != null
         isSerializable = isSerializable(manager, basicElement) && (basicTypeName != null
-                && !ClassLookupMap.hasType(basicTypeName) || isList)
+                && !ClassLookupMap.hasType(basicTypeName) || isList || isMap)
 
         val typeName = elementTypeName
         wrapperAccessor = if (isSerializable && basicTypeName != null) SerializableAccessor(basicTypeName) else null
@@ -104,16 +127,25 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
             persisterDefinitionTypeName = ClassName.OBJECT
         }
 
-        nestedAccessor = if (isNested && !isList && typeName != null) {
+        if (isMap) {
+            keyPersisterFieldName = elementName + "_keypersister"
+            keyPersisterDefinitionTypeName = ParameterizedTypeName.get(BUNDLE_PERSISTER, keyTypeName)
+        } else {
+            keyPersisterFieldName = ""
+            keyPersisterDefinitionTypeName = ClassName.OBJECT
+        }
+
+        nestedAccessor = if (isNested && !isList && !isMap && typeName != null) {
             NestedAccessor(persisterFieldName, keyFieldName,
                     accessor)
         } else if (isList && typeName != null) {
             ListAccessor(keyFieldName, accessor, persisterFieldName)
+        } else if (isMap && typeName != null) {
+            MapAccessor(keyFieldName, accessor, persisterFieldName,
+                    keyPersisterFieldName)
         } else {
             null
         }
-
-
     }
 
     fun writePersistence(methodBuilder: MethodSpec.Builder) {
@@ -154,6 +186,11 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
             constructorCode.addStatement(CodeBlock.of("\$L = new \$T()", persisterFieldName,
                     ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)))
         }
+
+        if (isMap) {
+            constructorCode.addStatement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
+                    keyPersisterFieldName, SALVAGER, keyElement))
+        }
     }
 
     fun writeFields(typeBuilder: TypeSpec.Builder) {
@@ -164,6 +201,11 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
         if (isSerializable || isNested) {
             typeBuilder.addField(persisterDefinitionTypeName, persisterFieldName,
+                    Modifier.PRIVATE, Modifier.FINAL)
+        }
+
+        if (isMap) {
+            typeBuilder.addField(keyPersisterDefinitionTypeName, keyPersisterFieldName,
                     Modifier.PRIVATE, Modifier.FINAL)
         }
     }
