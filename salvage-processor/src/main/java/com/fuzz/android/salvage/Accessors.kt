@@ -6,7 +6,7 @@ import com.raizlabs.android.dbflow.processor.utils.lower
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.TypeName
-import java.util.*
+import java.util.ArrayList
 
 /**
  * Description: Base interface for accessing fields

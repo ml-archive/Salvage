@@ -1,11 +1,20 @@
 package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
+import com.fuzz.android.salvage.core.PersistField
 import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
-import com.squareup.javapoet.*
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.FieldSpec
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeSpec
+import com.squareup.javapoet.WildcardTypeName
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.MirroredTypeException
 
 /**
  * Description:
@@ -34,6 +43,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
     val isList: Boolean
     val isMap: Boolean
+    var hasCustomConverter: Boolean = false
 
     var componentTypeName: TypeName? = null
     var componentElement: TypeElement? = null
@@ -44,11 +54,22 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     val basicElement: Element?
 
     val persisterFieldName: String
-    val persisterDefinitionTypeName: TypeName
+    var persisterDefinitionTypeName: TypeName? = null
     val keyPersisterFieldName: String
     val keyPersisterDefinitionTypeName: TypeName
 
     init {
+
+        val annotation = element.getAnnotation(PersistField::class.java)
+        if (annotation != null) {
+            try {
+                annotation.bundlePersister
+            } catch (mte: MirroredTypeException) {
+                persisterDefinitionTypeName = ClassName.get(mte.typeMirror)
+                hasCustomConverter = true
+            }
+        }
+
         if (isPackagePrivate) {
             accessor = PackagePrivateScopeAccessor(elementName, packageName,
                     ClassName.get(element.enclosingElement as TypeElement).simpleName())
@@ -119,12 +140,12 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
         bundleMethodName = if (basicTypeName != null) ClassLookupMap.valueForType(basicTypeName, isSerializable) ?: "" else ""
 
-        if (isSerializable || isNested) {
-            persisterFieldName = elementName + "_persister"
-            persisterDefinitionTypeName = ParameterizedTypeName.get(BUNDLE_PERSISTER, basicTypeName)
-        } else {
-            persisterFieldName = ""
-            persisterDefinitionTypeName = ClassName.OBJECT
+        persisterFieldName = elementName + "_persister"
+
+        if (persisterDefinitionTypeName == null) {
+            if (isSerializable || isNested) {
+                persisterDefinitionTypeName = ParameterizedTypeName.get(BUNDLE_PERSISTER, basicTypeName)
+            }
         }
 
         if (isMap) {
@@ -135,7 +156,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
             keyPersisterDefinitionTypeName = ClassName.OBJECT
         }
 
-        nestedAccessor = if (isNested && !isList && !isMap && typeName != null) {
+        nestedAccessor = if ((isNested || hasCustomConverter) && !isList && !isMap && typeName != null) {
             NestedAccessor(persisterFieldName, keyFieldName,
                     accessor)
         } else if (isList && typeName != null) {
@@ -185,6 +206,9 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         } else if (isSerializable) {
             constructorCode.addStatement(CodeBlock.of("\$L = new \$T()", persisterFieldName,
                     ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)))
+        } else if (hasCustomConverter) {
+            constructorCode.addStatement(CodeBlock.of("\$L = new \$T()", persisterFieldName,
+                    persisterDefinitionTypeName))
         }
 
         if (isMap) {
@@ -199,7 +223,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
                 .initializer("$BASE_KEY + \$S", elementName)
                 .build())
 
-        if (isSerializable || isNested) {
+        if (isSerializable || isNested || hasCustomConverter) {
             typeBuilder.addField(persisterDefinitionTypeName, persisterFieldName,
                     Modifier.PRIVATE, Modifier.FINAL)
         }
