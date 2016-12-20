@@ -16,58 +16,88 @@ import javax.lang.model.element.TypeElement
  * @author Andrew Grosner (fuzz)
  */
 
-abstract class Field(val manager: ProcessorManager,
-                     val persistenceField: PersistenceField) {
+class FieldHolder(val manager: ProcessorManager,
+                  val basicElement: TypeElement?,
+                  val basicTypeName: TypeName?,
+                  val hasCustomConverter: Boolean,
+                  var persisterDefinitionTypeName: TypeName?,
+                  val persisterFieldName: String,
+                  val hasBundleMethod: Boolean) {
+
     var isNested = false
     var isSerializable = false
-    open val hasBundleMethod: Boolean
-        get() {
-            val typeName = basicTypeName
-            return typeName != null && ClassLookupMap.hasType(typeName)
-        }
-
-    open val basicElement: TypeElement?
-        get() = persistenceField.typeElement
-
-    open val basicTypeName: TypeName?
-        get() = persistenceField.elementTypeName
-
-    abstract val nestedAccessor: Accessor?
 
     fun init() {
-        initialize()
-
         val basicElement = basicElement
         val basicTypeName = basicTypeName
         isNested = basicElement?.getAnnotation(Persist::class.java) != null
         isSerializable = isSerializable(manager, basicElement) && (basicTypeName != null
                 && !ClassLookupMap.hasType(basicTypeName))
 
+        if (persisterDefinitionTypeName == null) {
+            val basicType = basicTypeName
+            persisterDefinitionTypeName = ParameterizedTypeName.get(BUNDLE_PERSISTER, basicType)
+        }
+
+    }
+
+    fun writeForConstructor(constructorCode: MethodSpec.Builder) {
+        if (isSerializable || hasCustomConverter) {
+            val persisterTypeName = if (isSerializable) {
+                ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)
+            } else {
+                persisterDefinitionTypeName
+            }
+            constructorCode.addStatement(CodeBlock.of("\$L = new \$T()",
+                    persisterFieldName, persisterTypeName))
+        } else if (!hasBundleMethod) {
+            constructorCode.addStatement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
+                    persisterFieldName, SALVAGER, basicElement))
+        }
+    }
+
+    fun writeFields(typeBuilder: TypeSpec.Builder) {
+        if (!hasBundleMethod || hasCustomConverter) {
+            typeBuilder.addField(persisterDefinitionTypeName, persisterFieldName,
+                    Modifier.PRIVATE, Modifier.FINAL)
+        }
+    }
+}
+
+abstract class Field(val manager: ProcessorManager,
+                     val persistenceField: PersistenceField,
+                     open val basicElement: TypeElement? = persistenceField.typeElement,
+                     open val basicTypeName: TypeName? = persistenceField.elementTypeName) {
+
+    open val hasBundleMethod: Boolean
+        get() {
+            val typeName = basicTypeName
+            return typeName != null && ClassLookupMap.hasType(typeName)
+        }
+
+    open val fieldHolder: FieldHolder by lazy {
+        FieldHolder(manager, persistenceField.typeElement, persistenceField.elementTypeName,
+                persistenceField.hasCustomConverter, persistenceField.persisterDefinitionTypeName,
+                persistenceField.persisterFieldName, hasBundleMethod)
+    }
+
+    abstract val nestedAccessor: Accessor?
+
+    fun init() {
+        initialize()
+
+        fieldHolder.init()
+
     }
 
     abstract fun initialize()
 
     open fun writeForConstructor(constructorCode: MethodSpec.Builder) {
-        if (isSerializable || persistenceField.hasCustomConverter) {
-            val persisterTypeName = if (isSerializable) {
-                ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)
-            } else {
-                persistenceField.persisterDefinitionTypeName
-            }
-            constructorCode.addStatement(CodeBlock.of("\$L = new \$T()",
-                    persistenceField.persisterFieldName, persisterTypeName))
-        } else if (!hasBundleMethod) {
-            constructorCode.addStatement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
-                    persistenceField.persisterFieldName, SALVAGER, basicElement))
-        }
+        fieldHolder.writeForConstructor(constructorCode)
     }
 
     open fun writeFields(typeBuilder: TypeSpec.Builder) {
-        if (!hasBundleMethod || persistenceField.hasCustomConverter) {
-            typeBuilder.addField(persistenceField.persisterDefinitionTypeName,
-                    persistenceField.persisterFieldName,
-                    Modifier.PRIVATE, Modifier.FINAL)
-        }
+        fieldHolder.writeFields(typeBuilder)
     }
 }
 
@@ -97,6 +127,12 @@ class ListField(manager: ProcessorManager,
 
     var componentTypeName: TypeName? = null
     var componentElement: TypeElement? = null
+
+    override val fieldHolder: FieldHolder by lazy {
+        FieldHolder(manager, componentElement, componentTypeName,
+                persistenceField.hasCustomConverter, persistenceField.persisterDefinitionTypeName,
+                persistenceField.persisterFieldName, hasBundleMethod)
+    }
 
     override val hasBundleMethod: Boolean
         get() = false
@@ -131,6 +167,20 @@ class MapField(manager: ProcessorManager,
     var componentElement: TypeElement? = null
     var keyTypeName: TypeName? = null
     var keyElement: TypeElement? = null
+
+
+    override val fieldHolder: FieldHolder by lazy {
+        FieldHolder(manager, componentElement, componentTypeName,
+                persistenceField.hasCustomConverter, persistenceField.persisterDefinitionTypeName,
+                persistenceField.persisterFieldName, hasBundleMethod)
+    }
+
+
+    val keyFieldHolder: FieldHolder by lazy {
+        FieldHolder(manager, keyElement, keyTypeName,
+                persistenceField.hasCustomConverter, persistenceField.persisterDefinitionTypeName,
+                keyPersisterFieldName, hasBundleMethod)
+    }
 
     override val basicTypeName: TypeName?
         get() = componentTypeName
@@ -170,17 +220,17 @@ class MapField(manager: ProcessorManager,
         if (keyTypeName != null && keyTypeName is WildcardTypeName) {
             this.keyTypeName = keyTypeName.upperBounds[0]
         }
+
+        keyFieldHolder.init()
     }
 
     override fun writeForConstructor(constructorCode: MethodSpec.Builder) {
         super.writeForConstructor(constructorCode)
-        constructorCode.addStatement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
-                keyPersisterFieldName, SALVAGER, keyElement))
+        keyFieldHolder.writeForConstructor(constructorCode)
     }
 
     override fun writeFields(typeBuilder: TypeSpec.Builder) {
         super.writeFields(typeBuilder)
-        typeBuilder.addField(keyPersisterDefinitionTypeName, keyPersisterFieldName,
-                Modifier.PRIVATE, Modifier.FINAL)
+        keyFieldHolder.writeFields(typeBuilder)
     }
 }

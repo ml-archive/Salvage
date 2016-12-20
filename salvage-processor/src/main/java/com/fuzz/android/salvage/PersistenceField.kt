@@ -76,6 +76,8 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         // for now, later we can configure
         bundleKey = elementName
 
+        persisterFieldName = elementName + "_persister"
+
         val typeName = elementTypeName
 
         var typeElement: TypeElement? = manager.elements.getTypeElement(elementTypeName.toString())
@@ -101,6 +103,10 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
                 isSerializable(manager, typeElement) && (typeName != null
                 && !ClassLookupMap.hasType(typeName))
 
+        keyFieldName = "key_" + elementName
+
+        bundleMethodName = if (typeName != null) ClassLookupMap.valueForType(typeName, isSerializable) ?: "" else ""
+
         if (isList) {
             field = ListField(manager, this)
         } else if (isMap) {
@@ -113,18 +119,6 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
         field.init()
 
-        keyFieldName = "key_" + elementName
-
-        bundleMethodName = if (typeName != null) ClassLookupMap.valueForType(typeName, isSerializable) ?: "" else ""
-
-        persisterFieldName = elementName + "_persister"
-
-        if (persisterDefinitionTypeName == null) {
-            val basicType = field.basicTypeName
-            if (isSerializable || isNested || isList || isMap) {
-                persisterDefinitionTypeName = ParameterizedTypeName.get(BUNDLE_PERSISTER, basicType)
-            }
-        }
 
         nestedAccessor = field.nestedAccessor
     }

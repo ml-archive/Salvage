@@ -15,7 +15,9 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
         if (list != null) {
             val count = list.size
             bundle.putInt(uniqueBaseKey + fieldKey + ":count", count)
-            (0..count - 1).forEach { bundlePersister.persist(list[it], bundle, uniqueBaseKey + fieldKey + it) }
+            (0..count - 1).forEach {
+                bundlePersister.persist(list[it], bundle, uniqueBaseKey + fieldKey + it)
+            }
         }
     }
 
@@ -23,7 +25,9 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
                                         fieldKey: String, bundlePersister: BundlePersister<T>): List<T>? {
         val count = bundle.getInt(uniqueBaseKey + fieldKey + ":count", 0)
         if (count > 0) {
-            return (0..count - 1).mapNotNull { bundlePersister.unpack(null, bundle, uniqueBaseKey + fieldKey + it) }
+            return (0..count - 1).mapNotNull {
+                bundlePersister.unpack(null, bundle, uniqueBaseKey + fieldKey + it)
+            }
         }
         return null
     }

@@ -12,14 +12,13 @@ import java.io.Serializable
  * @author Andrew Grosner (Fuzz)
  */
 @Persist
-data class Example(@PersistField(bundlePersister = CustomStringPersister::class) var name: String? = null,
+data class Example(@PersistField(bundlePersister = CustomStringPersister::class)
+                   var name: String? = null,
                    var age: Int? = null,
                    var charSequence: Array<CharSequence>? = null,
                    var serializable: SimpleSerializable? = null)
 
-class SimpleSerializable : Serializable {
-
-}
+class SimpleSerializable : Serializable
 
 @Persist
 data class ParentObject(var example: Example? = null)
@@ -41,3 +40,5 @@ class CustomStringPersister : BundlePersister<String> {
         return bundle.getString(uniqueBaseKey + "candy")
     }
 }
+
+data class MapListExample(var mapList: Map<String, List<ParentObject>>)
