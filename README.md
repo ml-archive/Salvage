@@ -19,7 +19,7 @@ Add the the artifacts to the project-level build.gradle:
 
 ```
 
-def salvage_version = ${VERSION} // Version is git hash (10 char) until first release
+def salvage_version = "1.0.0"
 
 dependencies {
 
@@ -102,8 +102,8 @@ Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
 1. Serializable
 2. All primitive + boxed types, including nullable + not null Kotlin Types that Android's `Bundle` supports
 3. Nested `@Persist` objects
-3. `List` of all these kinds
-4. We also support private fields (with getter/setters), package private fields  in same package (or not via `PersistHelper`), and public
+3. `List` of all these kinds, `Map<K,V>` with any type of key or value. `Map<K, List<T>>` is not supported yet.
+4. We also support private fields (with getter/setters), package private fields in same package (or not via `PersistHelper`), and public
 5. Inherited fields are collected as well.
 
 ## Advanced Features
@@ -113,11 +113,8 @@ Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
 If you have fields you wish to exclude from `@Persist`, use the `@PersistIgnore`:
 
 ```
-
 @PersistIgnore
 var user: User? = null
-
-
 ```
 
 ### Custom BundlePersister
@@ -142,7 +139,20 @@ Then register it on the field you need:
 
 ```kotlin
 
-@PersistField
+@PersistField(bundlePersister = CustomStringPersister::class)
 var name: String = ""
 
 ```
+
+## Proguard
+
+Proguard configuration is:
+
+```
+-keep class * extends com.fuzz.android.salvage.BundlePersister { *; }
+```
+Since we use reflection to instantiate persisters as we use them, we need to ensure
+the class is kept around.
+
+## Maintainer
+[agrosner](https://github.com/agrosner) ([@agrosner](https://www.twitter.com/agrosner))
