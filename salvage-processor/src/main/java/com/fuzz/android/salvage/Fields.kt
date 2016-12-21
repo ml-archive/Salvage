@@ -168,7 +168,6 @@ class MapField(manager: ProcessorManager,
     var keyTypeName: TypeName? = null
     var keyElement: TypeElement? = null
 
-
     override val fieldHolder: FieldHolder by lazy {
         FieldHolder(manager, componentElement, componentTypeName,
                 persistenceField.hasCustomConverter, persistenceField.persisterDefinitionTypeName,
@@ -193,9 +192,6 @@ class MapField(manager: ProcessorManager,
 
     val keyPersisterFieldName: String
         get() = persistenceField.elementName + "_keypersister"
-
-    val keyPersisterDefinitionTypeName: TypeName
-        get() = ParameterizedTypeName.get(BUNDLE_PERSISTER, keyTypeName)
 
     override val nestedAccessor: Accessor? by lazy {
         MapAccessor(persistenceField.keyFieldName, persistenceField.accessor,

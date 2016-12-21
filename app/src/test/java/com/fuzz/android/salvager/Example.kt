@@ -29,7 +29,9 @@ data class ListExample(var list: List<ParentObject> = arrayListOf(),
                        var listSerializable: List<SimpleSerializable> = arrayListOf())
 
 @Persist
-data class MapExample(var map: Map<String, ParentObject> = mutableMapOf())
+data class MapExample(var map: Map<String, ParentObject> = mutableMapOf(),
+                      var mapComplex: Map<ParentObject, ParentObject> = mutableMapOf(),
+                      var mapSerializable: Map<SimpleSerializable, Int> = mutableMapOf())
 
 class CustomStringPersister : BundlePersister<String> {
     override fun persist(obj: String?, bundle: Bundle, uniqueBaseKey: String) {
