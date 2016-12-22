@@ -87,7 +87,7 @@ class PrivateScopeAccessor(propertyName: String?, getterSetter: GetterSetter? = 
     val setterNameElement: String by lazy {
         if (propertyName != null) {
             var setElementName = propertyName
-            return if (setterName.isNullOrEmpty()) {
+            if (setterName.isNullOrEmpty()) {
                 if (!setElementName.startsWith("set", ignoreCase = true)) {
                     if (isBoolean && setElementName.startsWith("is")) {
                         setElementName = setElementName.replaceFirst("is".toRegex(), "")
