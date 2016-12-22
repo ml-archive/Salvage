@@ -8,7 +8,6 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Element
@@ -47,6 +46,8 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     init {
 
         val annotation = element.getAnnotation(PersistField::class.java)
+        var getterName = ""
+        var setterName = ""
         if (annotation != null) {
             try {
                 annotation.bundlePersister
@@ -54,6 +55,9 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
                 persisterDefinitionTypeName = ClassName.get(mte.typeMirror)
                 hasCustomConverter = true
             }
+
+            getterName = annotation.getterName
+            setterName = annotation.setterName
         }
 
         if (isPackagePrivate) {
@@ -65,10 +69,10 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
             val isBoolean = elementTypeName?.box() == TypeName.BOOLEAN.box()
 
             accessor = PrivateScopeAccessor(elementName, object : GetterSetter {
-                override val getterName = ""
-                override val setterName = ""
+                override val getterName = getterName
+                override val setterName = setterName
 
-            }, isBoolean, false)
+            }, isBoolean)
         } else {
             accessor = VisibleScopeAccessor(elementName)
         }

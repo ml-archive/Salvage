@@ -5,7 +5,6 @@ import com.raizlabs.android.dbflow.processor.utils.capitalizeFirstLetter
 import com.raizlabs.android.dbflow.processor.utils.lower
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.TypeName
 import java.util.ArrayList
 
 /**
@@ -66,21 +65,42 @@ class VisibleScopeAccessor(propertyName: String) : Accessor(propertyName) {
     }
 }
 
-class PrivateScopeAccessor : Accessor {
+class PrivateScopeAccessor(propertyName: String?, getterSetter: GetterSetter? = null,
+                           private val isBoolean: Boolean = false,
+                           private var getterName: String = "",
+                           private var setterName: String = "") : Accessor(propertyName) {
 
-    private val useIsForPrivateBooleans: Boolean
-    private val isBoolean: Boolean
+    val getterNameElement: String by lazy {
+        if (getterName.isNullOrEmpty()) {
+            if (propertyName != null) {
+                if (isBoolean && !propertyName.startsWith("is", ignoreCase = true)) {
+                    "is" + propertyName.capitalizeFirstLetter()
+                } else if (!isBoolean && !propertyName.startsWith("get", ignoreCase = true)) {
+                    "get" + propertyName.capitalizeFirstLetter()
+                } else propertyName.lower()
+            } else {
+                ""
+            }
+        } else getterName
+    }
 
-    private var getterName: String = ""
-    private var setterName: String = ""
+    val setterNameElement: String by lazy {
+        if (propertyName != null) {
+            var setElementName = propertyName
+            return if (setterName.isNullOrEmpty()) {
+                if (!setElementName.startsWith("set", ignoreCase = true)) {
+                    if (isBoolean && setElementName.startsWith("is")) {
+                        setElementName = setElementName.replaceFirst("is".toRegex(), "")
+                    } else if (isBoolean && setElementName.startsWith("Is")) {
+                        setElementName = setElementName.replaceFirst("Is".toRegex(), "")
+                    }
+                    "set" + setElementName.capitalizeFirstLetter()
+                } else setElementName.lower()
+            } else setterName
+        } else ""
+    }
 
-    constructor(propertyName: String,
-                getterSetter: GetterSetter? = null,
-                isBoolean: Boolean = false,
-                useIsForPrivateBooleans: Boolean = false) : super(propertyName) {
-        this.isBoolean = isBoolean
-        this.useIsForPrivateBooleans = useIsForPrivateBooleans
-
+    init {
         getterSetter?.let {
             getterName = getterSetter.getterName
             setterName = getterSetter.setterName
@@ -90,46 +110,18 @@ class PrivateScopeAccessor : Accessor {
     override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         val codeBlock: CodeBlock.Builder = CodeBlock.builder()
         existingBlock?.let { codeBlock.add("\$L.", existingBlock) }
-        return codeBlock.add("\$L()", getGetterNameElement())
+        return codeBlock.add("\$L()", getterNameElement)
                 .build()
     }
 
     override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         val codeBlock: CodeBlock.Builder = CodeBlock.builder()
         baseVariableName?.let { codeBlock.add("\$L.", baseVariableName) }
-        return codeBlock.add("\$L(\$L)", getSetterNameElement(), existingBlock)
+        return codeBlock.add("\$L(\$L)", setterNameElement, existingBlock)
                 .build()
     }
 
-    fun getGetterNameElement(): String {
-        return if (getterName.isNullOrEmpty()) {
-            if (propertyName != null) {
-                if (useIsForPrivateBooleans && !propertyName.startsWith("is", ignoreCase = true)) {
-                    "is" + propertyName.capitalizeFirstLetter()
-                } else if (!useIsForPrivateBooleans && !propertyName.startsWith("get", ignoreCase = true)) {
-                    "get" + propertyName.capitalizeFirstLetter()
-                } else propertyName.lower()
-            } else {
-                ""
-            }
-        } else getterName
-    }
 
-    fun getSetterNameElement(): String {
-        if (propertyName != null) {
-            var setElementName = propertyName
-            return if (setterName.isNullOrEmpty()) {
-                if (!setElementName.startsWith("set", ignoreCase = true)) {
-                    if (useIsForPrivateBooleans && setElementName.startsWith("is")) {
-                        setElementName = setElementName.replaceFirst("is".toRegex(), "")
-                    } else if (useIsForPrivateBooleans && setElementName.startsWith("Is")) {
-                        setElementName = setElementName.replaceFirst("Is".toRegex(), "")
-                    }
-                    "set" + setElementName.capitalizeFirstLetter()
-                } else setElementName.lower()
-            } else setterName
-        } else return ""
-    }
 }
 
 class PackagePrivateScopeAccessor(propertyName: String, packageName: String,

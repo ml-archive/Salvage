@@ -17,4 +17,6 @@ annotation class PersistIgnore
  */
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class PersistField(val bundlePersister: KClass<*> = Any::class)
+annotation class PersistField(val bundlePersister: KClass<*> = Any::class,
+                              val getterName: String = "",
+                              val setterName: String = "")
