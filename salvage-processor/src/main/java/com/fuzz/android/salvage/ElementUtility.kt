@@ -1,6 +1,5 @@
-package com.raizlabs.android.dbflow.processor.utils
+package com.fuzz.android.salvage
 
-import com.fuzz.android.salvage.ProcessorManager
 import com.fuzz.android.salvage.core.PersistIgnore
 import com.squareup.javapoet.ClassName
 import java.util.ArrayList

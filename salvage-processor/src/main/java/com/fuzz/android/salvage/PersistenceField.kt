@@ -2,7 +2,6 @@ package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
 import com.fuzz.android.salvage.core.PersistField
-import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
 import com.squareup.javapoet.ArrayTypeName
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock

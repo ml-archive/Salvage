@@ -1,4 +1,4 @@
-package com.raizlabs.android.dbflow.processor.definition
+package com.fuzz.android.salvage
 
 import com.squareup.javapoet.TypeSpec
 

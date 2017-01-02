@@ -1,8 +1,6 @@
 package com.fuzz.android.salvage
 
 import com.google.common.collect.Maps
-import com.raizlabs.android.dbflow.processor.utils.capitalizeFirstLetter
-import com.raizlabs.android.dbflow.processor.utils.lower
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import java.util.ArrayList
