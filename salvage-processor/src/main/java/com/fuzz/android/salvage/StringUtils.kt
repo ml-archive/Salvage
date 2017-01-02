@@ -1,4 +1,4 @@
-package com.raizlabs.android.dbflow.processor.utils
+package com.fuzz.android.salvage
 
 /**
  * Description:

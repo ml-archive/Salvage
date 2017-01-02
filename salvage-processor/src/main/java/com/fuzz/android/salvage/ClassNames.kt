@@ -1,7 +1,6 @@
 package com.fuzz.android.salvage
 
 import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.TypeName
 
 /**
  * Description:

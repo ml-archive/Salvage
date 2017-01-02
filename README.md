@@ -17,7 +17,7 @@ Add the the artifacts to the project-level build.gradle:
 
 ```
 
-def salvage_version = "1.0.1"
+def salvage_version = "1.0.2"
 
 dependencies {
 

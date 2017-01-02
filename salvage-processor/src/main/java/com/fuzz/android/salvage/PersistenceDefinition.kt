@@ -3,8 +3,6 @@ package com.fuzz.android.salvage
 import com.fuzz.android.salvage.core.Persist
 import com.fuzz.android.salvage.core.PersistField
 import com.fuzz.android.salvage.core.PersistPolicy
-import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
-import com.raizlabs.android.dbflow.processor.utils.ElementUtility
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.MethodSpec

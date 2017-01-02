@@ -1,8 +1,5 @@
 package com.fuzz.android.salvage
 
-import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
-import com.raizlabs.android.dbflow.processor.utils.ElementUtility
-import com.raizlabs.android.dbflow.processor.utils.capitalizeFirstLetter
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
@@ -31,16 +28,6 @@ fun writePackageHelper(processingEnvironment: ProcessingEnvironment,
         for (persistenceField in packagePrivateList) {
             var helperClassName = "${manager.elements.getPackageOf(persistenceField.element)}" +
                     ".${ClassName.get(persistenceField.element.enclosingElement as TypeElement).simpleName()}_PersistenceHelper"
-
-            // TODO: nested fields?
-            /*if (persistenceField is ForeignKeyColumnDefinition) {
-                val tableDefinition: TableDefinition? = databaseDefinition?.objectHolder?.tableDefinitionMap?.get(persistenceField.referencedTableClassName as TypeName)
-                if (tableDefinition != null) {
-                    helperClassName = manager.elements.getPackageOf(tableDefinition.element).toString() +
-                            "." + ClassName.get(tableDefinition.element as TypeElement).simpleName() +
-                            databaseDefinition?.classSeparator + "Helper"
-                }
-            }*/
 
             val className = ElementUtility.getClassName(helperClassName, manager)
 

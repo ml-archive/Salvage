@@ -1,7 +1,5 @@
-package com.raizlabs.android.dbflow.processor.definition
+package com.fuzz.android.salvage
 
-import com.fuzz.android.salvage.ProcessorManager
-import com.raizlabs.android.dbflow.processor.utils.ElementUtility
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
