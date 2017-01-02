@@ -1,9 +1,16 @@
 package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
+import com.fuzz.android.salvage.core.PersistField
+import com.fuzz.android.salvage.core.PersistPolicy
 import com.raizlabs.android.dbflow.processor.definition.BaseDefinition
 import com.raizlabs.android.dbflow.processor.utils.ElementUtility
-import com.squareup.javapoet.*
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.FieldSpec
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeSpec
 import java.io.IOException
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
@@ -23,16 +30,23 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
 
     val persistenceFields: MutableList<PersistenceField> = arrayListOf()
 
+    val persistPolicy: PersistPolicy
+
     init {
         setOutputClassName("Persister")
 
         val persistenceAnnotation: Persist? = typeElement.getAnnotation(Persist::class.java)
+        if (persistenceAnnotation != null) {
+            persistPolicy = persistenceAnnotation.persistPolicy
+        } else {
+            persistPolicy = PersistPolicy.VISIBLE_FIELDS_AND_METHODS
+        }
 
         val elements = ElementUtility.getAllElements(typeElement, manager)
 
         elements.forEach {
 
-            val isValidField = ElementUtility.isValidAllFields(true, it)
+            var isValidField = ElementUtility.isValidAllFields(true, it)
 
             // package private, will generate helper
             val isPackagePrivate = ElementUtility.isPackagePrivate(it)
@@ -40,9 +54,16 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                     !ElementUtility.isInSamePackage(manager, it, typeElement)
 
             if (isValidField) {
-                val persistenceField = PersistenceField(manager, it, isPackagePrivateNotInSamePackage)
+                if (persistPolicy == PersistPolicy.ANNOTATIONS_ONLY) {
+                    isValidField = it.getAnnotation(PersistField::class.java) != null
+                } else if (persistPolicy == PersistPolicy.PRIVATE_ACCESSORS_ONLY) {
+                    isValidField = it.modifiers.contains(Modifier.PRIVATE)
+                }
+                if (isValidField) {
+                    val persistenceField = PersistenceField(manager, it, isPackagePrivateNotInSamePackage)
 
-                persistenceFields.add(persistenceField)
+                    persistenceFields.add(persistenceField)
+                }
             }
         }
     }

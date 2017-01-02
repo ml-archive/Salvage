@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'com.getkeepsafe.dexcount'
 
 android {
     compileSdkVersion 25
@@ -38,6 +39,12 @@ dependencies {
 
     testCompile "org.robolectric:robolectric:3.1.4"
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+    compile 'org.parceler:parceler-api:1.1.6'
+    kapt 'org.parceler:parceler:1.1.6'
+
+    compile 'frankiesardo:icepick:3.2.0'
+    kapt 'frankiesardo:icepick-processor:3.2.0'
 }
 
 kapt {

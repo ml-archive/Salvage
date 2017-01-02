@@ -36,7 +36,9 @@ class FieldHolder(val manager: ProcessorManager,
 
         if (persisterDefinitionTypeName == null) {
             val basicType = basicTypeName
-            persisterDefinitionTypeName = ParameterizedTypeName.get(BUNDLE_PERSISTER, basicType)
+            if (basicType?.isPrimitive?.not() ?: false) {
+                persisterDefinitionTypeName = ParameterizedTypeName.get(BUNDLE_PERSISTER, basicType)
+            }
         }
 
     }

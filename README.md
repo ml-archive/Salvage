@@ -1,8 +1,6 @@
 # Salvage
 A annotation-processing based library to salvage your view state across configuration changes in a quick and efficient way. It is Kotlin-first, meaning this project is compiled mostly with Kotlin and is tested first on Kotlin.
 
-_Note_: Not to worry Android Java users, this library does not include the Kotlin-stdlib dependency. The precompiled artifacts will be compatible jars + aars.
-
 ## Getting Started
 
 Add the Jitpack.io repo to your project:
@@ -19,7 +17,7 @@ Add the the artifacts to the project-level build.gradle:
 
 ```
 
-def salvage_version = "1.0.0"
+def salvage_version = "1.0.1"
 
 dependencies {
 
