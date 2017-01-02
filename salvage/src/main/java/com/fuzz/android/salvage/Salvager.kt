@@ -2,6 +2,7 @@ package com.fuzz.android.salvage
 
 import android.os.Bundle
 import java.io.Serializable
+import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
 /**
@@ -100,5 +101,16 @@ object Salvager {
         }
     }
 
+    /**
+     * Restore your state here.
+     * [obj] the Class of the object to restore. Will return a new instance.
+     * [bundle] the bundle to restore. If null we ignore restoring.
+     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
+     * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
+     * By default you should not use this method without a corresponding call to [onSaveInstanceState]
+     */
+    fun <T : Any> onRestoreInstanceState(obj: KClass<T>, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
+        return onRestoreInstanceState(obj.java, bundle, uniqueBaseKey)
+    }
 
 }

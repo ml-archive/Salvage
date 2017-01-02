@@ -74,7 +74,7 @@ class PersistenceTest {
         val inner = InnerClassExample.Inner()
         Salvager.onSaveInstanceState(inner, Bundle(), "")
 
-        val restored = Salvager.onRestoreInstanceState(InnerClassExample.Inner::class.java, Bundle(), "")
+        val restored = Salvager.onRestoreInstanceState(InnerClassExample.Inner::class, Bundle(), "")
         assertNotNull(restored)
     }
 }
