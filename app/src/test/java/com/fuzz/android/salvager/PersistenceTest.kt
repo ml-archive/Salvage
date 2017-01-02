@@ -67,4 +67,14 @@ class PersistenceTest {
         assertEquals(1, serializable.size)
         assertNotNull(serializable[0])
     }
+
+    @Test
+    fun testCanFindInnerClass() {
+
+        val inner = InnerClassExample.Inner()
+        Salvager.onSaveInstanceState(inner, Bundle(), "")
+
+        val restored = Salvager.onRestoreInstanceState(InnerClassExample.Inner::class, Bundle(), "")
+        assertNotNull(restored)
+    }
 }

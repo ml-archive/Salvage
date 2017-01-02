@@ -2,6 +2,7 @@ package com.fuzz.android.salvage
 
 import android.os.Bundle
 import java.io.Serializable
+import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
 /**
@@ -55,6 +56,7 @@ object Salvager {
      * By default you should not use this method without a corresponding call to [onRestoreInstanceState]
      */
     @JvmStatic
+    @JvmOverloads
     fun <T : Any> onSaveInstanceState(obj: T?, bundle: Bundle?, uniqueBaseKey: String = "") {
         if (obj == null || bundle == null) {
             return
@@ -71,12 +73,44 @@ object Salvager {
      * By default you should not use this method without a corresponding call to [onSaveInstanceState]
      */
     @JvmStatic
+    @JvmOverloads
     fun <T : Any> onRestoreInstanceState(obj: T?, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
         return if (obj == null || bundle == null) {
             null
         } else {
             getBundlePersister(obj.javaClass).unpack(obj, bundle, uniqueBaseKey)
         }
+    }
+
+
+    /**
+     * Restore your state here.
+     * [obj] the Class of the object to restore. Will return a new instance.
+     * [bundle] the bundle to restore. If null we ignore restoring.
+     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
+     * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
+     * By default you should not use this method without a corresponding call to [onSaveInstanceState]
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun <T : Any> onRestoreInstanceState(obj: Class<T>, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
+        return if (bundle == null) {
+            null
+        } else {
+            getBundlePersister(obj).unpack(null, bundle, uniqueBaseKey)
+        }
+    }
+
+    /**
+     * Restore your state here.
+     * [obj] the Class of the object to restore. Will return a new instance.
+     * [bundle] the bundle to restore. If null we ignore restoring.
+     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
+     * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
+     * By default you should not use this method without a corresponding call to [onSaveInstanceState]
+     */
+    fun <T : Any> onRestoreInstanceState(obj: KClass<T>, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
+        return onRestoreInstanceState(obj.java, bundle, uniqueBaseKey)
     }
 
 }

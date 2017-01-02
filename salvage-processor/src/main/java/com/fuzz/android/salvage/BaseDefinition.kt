@@ -100,7 +100,7 @@ abstract class BaseDefinition : TypeDefinition {
     }
 
     protected fun setOutputClassName(postfix: String) {
-        val outputName: String
+        var outputName: String
         if (elementClassName == null) {
             if (elementTypeName is ClassName) {
                 outputName = (elementTypeName as ClassName).simpleName()
@@ -112,6 +112,11 @@ abstract class BaseDefinition : TypeDefinition {
             }
         } else {
             outputName = elementClassName!!.simpleName()
+        }
+
+        val enclosing = elementClassName?.enclosingClassName()
+        if (enclosing != null) {
+            outputName = "${enclosing.simpleName()}\$$outputName"
         }
         outputClassName = ClassName.get(packageName, outputName + postfix)
     }
