@@ -17,5 +17,6 @@ public class InnerClassExample {
 
         String name;
 
+        final Example example = new Example();
     }
 }
