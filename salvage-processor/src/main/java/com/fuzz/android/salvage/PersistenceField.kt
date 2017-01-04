@@ -147,7 +147,8 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
                 accessedBlock = accessor.set(block, CodeBlock.of(defaultParam))
                 methodBuilder.addStatement(accessedBlock)
             } else {
-                accessedBlock = nestedAccessor.set(block, CodeBlock.of(defaultParam))
+                accessedBlock = nestedAccessor.set(accessor.get(CodeBlock.of(defaultParam), null),
+                        CodeBlock.of(defaultParam))
                 methodBuilder.addCode(accessedBlock)
             }
         }

@@ -30,13 +30,16 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
         }
     }
 
-    protected fun <T : Any> restoreList(bundle: Bundle, uniqueBaseKey: String,
+    protected fun <T : Any> restoreList(existingList: MutableList<T>?,
+                                        bundle: Bundle, uniqueBaseKey: String,
                                         fieldKey: String, bundlePersister: BundlePersister<T>): List<T>? {
+        val list = existingList ?: arrayListOf()
+        list.clear()
         val count = bundle.getInt(getCountKey(fieldKey, uniqueBaseKey), 0)
         if (count > 0) {
-            return (0..count - 1).mapNotNull {
+            return (0..count - 1).mapNotNullTo(list, {
                 bundlePersister.unpack(null, bundle, "$uniqueBaseKey$fieldKey$it")
-            }
+            })
         }
         return null
     }
@@ -61,13 +64,15 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
     }
 
     protected fun <K : Any, V : Any> restoreMap(
+            existingMap: MutableMap<K, V?>?,
             bundle: Bundle, uniqueBaseKey: String,
             fieldKey: String,
             keyBundlePersister: BundlePersister<K>,
             variableBundlePersister: BundlePersister<V>): Map<K, V?>? {
+        val map = existingMap ?: mutableMapOf()
+        map.clear()
         val count = bundle.getInt(getCountKey(fieldKey, uniqueBaseKey), 0)
         if (count > 0) {
-            val map: MutableMap<K, V?> = mutableMapOf()
             (0..count - 1).forEach {
                 val key = keyBundlePersister
                         .unpack(null, bundle, getMapKey(fieldKey, it, uniqueBaseKey))

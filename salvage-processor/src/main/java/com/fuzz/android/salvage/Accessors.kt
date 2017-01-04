@@ -206,8 +206,8 @@ class NestedAccessor(val persisterFieldName: String,
 
         return appendAccess {
             addStatement(baseFieldAcessor.set(
-                    CodeBlock.of("\$L.unpack(null, bundle, \$L + $keyFieldName)",
-                            persisterFieldName, uniqueBaseKey),
+                    CodeBlock.of("\$L.unpack(\$L, bundle, \$L + $keyFieldName)",
+                            persisterFieldName, existingBlock, uniqueBaseKey),
                     baseVariableName))
         }
     }
@@ -228,8 +228,8 @@ class ListAccessor(val keyFieldName: String,
     override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return appendAccess {
             addStatement(baseFieldAcessor.set(
-                    CodeBlock.of("restoreList(bundle, $uniqueBaseKey, $keyFieldName, " +
-                            "$persisterFieldName)"),
+                    CodeBlock.of("restoreList(\$L, bundle, $uniqueBaseKey, $keyFieldName, " +
+                            "$persisterFieldName)", existingBlock),
                     baseVariableName))
         }
     }
@@ -252,8 +252,8 @@ class MapAccessor(val keyFieldName: String,
     override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return appendAccess {
             addStatement(baseFieldAcessor.set(
-                    CodeBlock.of("restoreMap(bundle, $uniqueBaseKey, $keyFieldName, " +
-                            "$keyPersisterFieldName, $persisterFieldName)"),
+                    CodeBlock.of("restoreMap(\$L, bundle, $uniqueBaseKey, $keyFieldName, " +
+                            "$keyPersisterFieldName, $persisterFieldName)", existingBlock),
                     baseVariableName))
         }
     }
