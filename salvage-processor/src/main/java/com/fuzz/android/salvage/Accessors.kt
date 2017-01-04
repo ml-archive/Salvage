@@ -173,19 +173,18 @@ class PackagePrivateScopeAccessor(propertyName: String, packageName: String,
     }
 }
 
-class NormalAccessor(val bundleMethodName: String, val keyFieldName: String, propertyName: String? = null)
+/**
+ * Used for complex [List] or [Map] or Nested types that are final, we don't reassign, we just
+ * attempt to assign fields to it.
+ */
+class EmptyAccessor(propertyName: String? = null)
     : Accessor(propertyName) {
     override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
-        return appendAccess {
-            addStatement("bundle.put\$L(\$L + \$L, \$L)",
-                    bundleMethodName, uniqueBaseKey, keyFieldName, existingBlock)
-        }
+        return appendAccess { add(existingBlock) }
     }
 
     override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
-        return appendAccess {
-
-        }
+        return appendAccess { add(existingBlock) }
     }
 
 }

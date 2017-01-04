@@ -44,6 +44,9 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
     init {
 
+        // final fields won't get assigned to
+        val isFinal = element.modifiers.contains(Modifier.FINAL)
+
         val annotation = element.getAnnotation(PersistField::class.java)
         var getterName = ""
         var setterName = ""
@@ -111,11 +114,11 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         bundleMethodName = if (typeName != null) ClassLookupMap.valueForType(typeName, isSerializable) ?: "" else ""
 
         if (isList) {
-            field = ListField(manager, this)
+            field = ListField(manager, this, isFinal)
         } else if (isMap) {
-            field = MapField(manager, this)
+            field = MapField(manager, this, isFinal)
         } else if (isSerializable || isNested || hasCustomConverter) {
-            field = CustomField(manager, this)
+            field = CustomField(manager, this, isFinal)
         } else {
             field = BasicField(manager, this)
         }
