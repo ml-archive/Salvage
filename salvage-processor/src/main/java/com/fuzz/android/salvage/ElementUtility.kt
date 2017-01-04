@@ -41,6 +41,7 @@ object ElementUtility {
 
     fun isValidAllFields(allFields: Boolean, element: Element): Boolean {
         return allFields && element.kind.isField &&
+                !element.modifiers.contains(Modifier.TRANSIENT) &&
                 !element.modifiers.contains(Modifier.STATIC) &&
                 element.getAnnotation(PersistIgnore::class.java) == null
     }
