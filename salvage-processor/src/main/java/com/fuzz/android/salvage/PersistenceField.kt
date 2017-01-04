@@ -54,8 +54,11 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
             try {
                 annotation.bundlePersister
             } catch (mte: MirroredTypeException) {
-                persisterDefinitionTypeName = ClassName.get(mte.typeMirror)
-                hasCustomConverter = true
+                val typeName = ClassName.get(mte.typeMirror)
+                if (typeName != TypeName.OBJECT) {
+                    persisterDefinitionTypeName = typeName
+                    hasCustomConverter = true
+                }
             }
 
             getterName = annotation.getterName
