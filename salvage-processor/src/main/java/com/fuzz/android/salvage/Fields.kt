@@ -60,7 +60,12 @@ class FieldHolder(val manager: ProcessorManager,
 
     fun writeFields(typeBuilder: TypeSpec.Builder) {
         if (!hasBundleMethod || hasCustomConverter) {
-            typeBuilder.addField(persisterDefinitionTypeName, persisterFieldName,
+            val persisterTypeName = if (isSerializable) {
+                ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)
+            } else {
+                persisterDefinitionTypeName
+            }
+            typeBuilder.addField(persisterTypeName, persisterFieldName,
                     Modifier.PRIVATE, Modifier.FINAL)
         }
     }
