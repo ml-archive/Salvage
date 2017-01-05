@@ -15,6 +15,11 @@ enum class PersistPolicy {
     VISIBLE_FIELDS_AND_METHODS,
 
     /**
+     * Package private or public fields are only included.
+     */
+    VISIBLE_FIELDS_ONLY,
+
+    /**
      * Any annotated field with [PersistField]. If they are private + have associated accessors,
      * they're counted too.
      */

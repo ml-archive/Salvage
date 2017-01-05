@@ -56,6 +56,8 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                     isValidField = it.getAnnotation(PersistField::class.java) != null
                 } else if (persistPolicy == PersistPolicy.PRIVATE_ACCESSORS_ONLY) {
                     isValidField = it.modifiers.contains(Modifier.PRIVATE)
+                } else if (persistPolicy == PersistPolicy.VISIBLE_FIELDS_ONLY) {
+                    isValidField = !it.modifiers.contains(Modifier.PRIVATE)
                 }
                 if (isValidField) {
                     val persistenceField = PersistenceField(manager, it, isPackagePrivateNotInSamePackage)
