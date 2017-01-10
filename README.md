@@ -152,28 +152,31 @@ var name: String = ""
 ### Field Detection
 
 By default, `Salvage` looks for all fields (and in all parent classes) that are:
-1. public
-2. package private
-3. private (with both getter / setter specified as bean)
+  1. public
+  2. package private
+  3. private (with both getter / setter specified as bean)
 
 Also they may be `val` (`final` in Java) if you use a nested `@Persist` or
 custom `BundlePersister` to reuse the same instance if you wish to instantiate
 the instance yourself.
 
 `Salvage` ignores:
-1. `transient`
-2. `private` fields missing a getter or setter.
-3. Fields annotated with `@PersistIgnore`
-4. `static` fields (`@JvmStatic`)
+  1. `transient`
+  2. `private` fields missing a getter or setter.
+  3. Fields annotated with `@PersistIgnore`
+  4. `static` fields (`@JvmStatic`)
 
 #### Persist Policy
 
 Instead of having to manually add `@PersistIgnore` or get stuck when you subclass an external object that you cannot control, you can tweak the `PersistPolicy`.
 
-`VISIBLE_FIELDS_AND_METHODS`: Default lookup mechanism.
-`VISIBLE_FIELDS_ONLY`: package private or public fields only
-`ANNOTATIONS_ONLY` : explicity specify `@PersistField`
-`PRIVATE_ACCESSORS_ONLY`: any private fields that have accessors
+  `VISIBLE_FIELDS_AND_METHODS`: Default lookup mechanism.
+
+  `VISIBLE_FIELDS_ONLY`: package private or public fields only
+
+  `ANNOTATIONS_ONLY` : explicity specify `@PersistField`
+
+  `PRIVATE_ACCESSORS_ONLY`: any private fields that have accessors
 
 ## Maintainer
 [agrosner](https://github.com/agrosner) ([@agrosner](https://www.twitter.com/agrosner))
