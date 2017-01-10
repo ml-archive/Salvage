@@ -15,5 +15,5 @@ dependencies {
     compile project(":salvage-core")
 }
 
-apply from: '../kotlin-artifacts.gradle'
+apply from: '../android-kotlin-artifacts.gradle'
 
