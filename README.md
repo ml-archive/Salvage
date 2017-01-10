@@ -35,6 +35,7 @@ Simple as annotating your class:
 
 ```kotlin
 
+// must provide visible default constructor
 @Persist
 data class User(var name: String? = null, var age: Int = 0)
 
@@ -43,6 +44,7 @@ data class User(var name: String? = null, var age: Int = 0)
 or in Java
 ```java
 
+// must provide visible default constructor
 @Persist
 public class User {
 
@@ -75,21 +77,16 @@ Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
 
     private var user: User? = null
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle bundle) {
+    override fun onSaveInstanceState(bundle: Bundle) {
         super.onSaveInstanceState(bundle)
         Salvager.onSaveInstanceState(user, bundle)
     }
 
-    @Override
-    public void onRestoreInstanceState(@NonNull Bundle bundle) {
+    override fun onRestoreInstanceState(bundle: Bundle) {
         super.onRestoreInstanceState(bundle);
-        val myUser = user
-        if (myUser == null) {
-          myUser = User()
-        }
-        Salvager.onRestoreInstanceState(myUser, bundle)
-        user = myUser
+        // restore, if user not null, we reuse the object to not unnecessarily
+        // recreate instance. If null, we create a new instance
+        user = Salvager.onRestoreInstanceState(user, bundle)
 
         // do something with restored state
       }
