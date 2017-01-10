@@ -60,7 +60,12 @@ class FieldHolder(val manager: ProcessorManager,
 
     fun writeFields(typeBuilder: TypeSpec.Builder) {
         if (!hasBundleMethod || hasCustomConverter) {
-            typeBuilder.addField(persisterDefinitionTypeName, persisterFieldName,
+            val persisterTypeName = if (isSerializable) {
+                ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)
+            } else {
+                persisterDefinitionTypeName
+            }
+            typeBuilder.addField(persisterTypeName, persisterFieldName,
                     Modifier.PRIVATE, Modifier.FINAL)
         }
     }
@@ -115,17 +120,19 @@ class BasicField(manager: ProcessorManager,
 }
 
 class CustomField(manager: ProcessorManager,
-                  persistenceField: PersistenceField) : Field(manager, persistenceField) {
+                  persistenceField: PersistenceField,
+                  val isFinal: Boolean) : Field(manager, persistenceField) {
     override val nestedAccessor: Accessor
         get() = NestedAccessor(persistenceField.persisterFieldName,
-                persistenceField.keyFieldName, persistenceField.accessor)
+                persistenceField.keyFieldName, if (isFinal) EmptyAccessor() else persistenceField.accessor)
 
     override fun initialize() {
     }
 }
 
 class ListField(manager: ProcessorManager,
-                persistenceField: PersistenceField) : Field(manager, persistenceField) {
+                persistenceField: PersistenceField,
+                val isFinal: Boolean) : Field(manager, persistenceField) {
 
     var componentTypeName: TypeName? = null
     var componentElement: TypeElement? = null
@@ -146,7 +153,7 @@ class ListField(manager: ProcessorManager,
         get() = componentTypeName
 
     override val nestedAccessor: Accessor? by lazy {
-        ListAccessor(persistenceField.keyFieldName, persistenceField.accessor,
+        ListAccessor(persistenceField.keyFieldName, if (isFinal) EmptyAccessor() else persistenceField.accessor,
                 persistenceField.persisterFieldName)
     }
 
@@ -163,7 +170,8 @@ class ListField(manager: ProcessorManager,
 }
 
 class MapField(manager: ProcessorManager,
-               persistenceField: PersistenceField) : Field(manager, persistenceField) {
+               persistenceField: PersistenceField,
+               val isFinal: Boolean) : Field(manager, persistenceField) {
 
     var componentTypeName: TypeName? = null
     var componentElement: TypeElement? = null
@@ -196,7 +204,7 @@ class MapField(manager: ProcessorManager,
         get() = persistenceField.elementName + "_keypersister"
 
     override val nestedAccessor: Accessor? by lazy {
-        MapAccessor(persistenceField.keyFieldName, persistenceField.accessor,
+        MapAccessor(persistenceField.keyFieldName, if (isFinal) EmptyAccessor() else persistenceField.accessor,
                 persistenceField.persisterFieldName, keyPersisterFieldName)
     }
 

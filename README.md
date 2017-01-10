@@ -17,7 +17,7 @@ Add the the artifacts to the project-level build.gradle:
 
 ```
 
-def salvage_version = "1.0.2"
+def salvage_version = "1.0.4"
 
 dependencies {
 
@@ -29,12 +29,23 @@ dependencies {
 
 ```
 
+## Proguard
+
+Proguard configuration is:
+
+```
+-keep class * extends com.fuzz.android.salvage.BundlePersister { *; }
+```
+Since we use reflection to instantiate persisters as we use them, we need to ensure
+the class is kept around.
+
 ## How To Use
 
 Simple as annotating your class:
 
 ```kotlin
 
+// must provide visible default constructor
 @Persist
 data class User(var name: String? = null, var age: Int = 0)
 
@@ -43,6 +54,7 @@ data class User(var name: String? = null, var age: Int = 0)
 or in Java
 ```java
 
+// must provide visible default constructor
 @Persist
 public class User {
 
@@ -75,21 +87,16 @@ Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
 
     private var user: User? = null
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle bundle) {
+    override fun onSaveInstanceState(bundle: Bundle) {
         super.onSaveInstanceState(bundle)
         Salvager.onSaveInstanceState(user, bundle)
     }
 
-    @Override
-    public void onRestoreInstanceState(@NonNull Bundle bundle) {
+    override fun onRestoreInstanceState(bundle: Bundle) {
         super.onRestoreInstanceState(bundle);
-        val myUser = user
-        if (myUser == null) {
-          myUser = User()
-        }
-        Salvager.onRestoreInstanceState(myUser, bundle)
-        user = myUser
+        // restore, if user not null, we reuse the object to not unnecessarily
+        // recreate instance. If null, we create a new instance
+        user = Salvager.onRestoreInstanceState(user, bundle)
 
         // do something with restored state
       }
@@ -142,15 +149,34 @@ var name: String = ""
 
 ```
 
-## Proguard
+### Field Detection
 
-Proguard configuration is:
+By default, `Salvage` looks for all fields (and in all parent classes) that are:
+  1. public
+  2. package private
+  3. private (with both getter / setter specified as bean)
 
-```
--keep class * extends com.fuzz.android.salvage.BundlePersister { *; }
-```
-Since we use reflection to instantiate persisters as we use them, we need to ensure
-the class is kept around.
+Also they may be `val` (`final` in Java) if you use a nested `@Persist` or
+custom `BundlePersister` to reuse the same instance if you wish to instantiate
+the instance yourself.
+
+`Salvage` ignores:
+  1. `transient`
+  2. `private` fields missing a getter or setter.
+  3. Fields annotated with `@PersistIgnore`
+  4. `static` fields (`@JvmStatic`)
+
+#### Persist Policy
+
+Instead of having to manually add `@PersistIgnore` or get stuck when you subclass an external object that you cannot control, you can tweak the `PersistPolicy`.
+
+  `VISIBLE_FIELDS_AND_METHODS`: Default lookup mechanism.
+
+  `VISIBLE_FIELDS_ONLY`: package private or public fields only
+
+  `ANNOTATIONS_ONLY` : explicity specify `@PersistField`
+
+  `PRIVATE_ACCESSORS_ONLY`: any private fields that have accessors
 
 ## Maintainer
 [agrosner](https://github.com/agrosner) ([@agrosner](https://www.twitter.com/agrosner))

@@ -39,11 +39,11 @@ class ProcessorManager(val processingEnvironment: ProcessingEnvironment) : Handl
 
     fun logError(error: String?, vararg args: Any?) = logError(callingClass = null, error = error, args = args)
 
-    fun logWarning(error: String, vararg args: Any) {
+    fun logWarning(error: String, vararg args: Any?) {
         messager.printMessage(Diagnostic.Kind.WARNING, String.format("*==========*\n$error\n*==========*", *args))
     }
 
-    fun logWarning(callingClass: Class<*>, error: String, vararg args: Any) {
+    fun logWarning(callingClass: KClass<*>, error: String, vararg args: Any?) {
         logWarning("$callingClass : $error", *args)
     }
 

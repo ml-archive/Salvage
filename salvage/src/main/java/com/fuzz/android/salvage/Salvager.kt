@@ -65,6 +65,24 @@ object Salvager {
     }
 
     /**
+     * Save your state here.
+     * [obj] the nullable object to save. If null we ignore saving
+     * [bundle] the bundle to save. If null we ignore saving
+     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
+     * by prepending this key to the base. This is to ensure we can store any nested object in same bundle.
+     * By default you should not use this method without a corresponding call to [onRestoreInstanceState]
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun <T : Any> onSaveInstanceState(obj: T?, uniqueBaseKey: String = ""): Bundle {
+        val bundle = Bundle()
+        if (obj != null) {
+            getBundlePersister(obj.javaClass).persist(obj, bundle, uniqueBaseKey)
+        }
+        return bundle
+    }
+
+    /**
      * Restore your state here.
      * [obj] the nullable object to restore. If null we ignore restoring. So ensure its not null.
      * [bundle] the bundle to restore. If null we ignore restoring.

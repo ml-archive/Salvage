@@ -21,17 +21,20 @@ data class Example(@PersistField(bundlePersister = CustomStringPersister::class)
 class SimpleSerializable : Serializable
 
 @Persist
-data class ParentObject(var example: Example? = null)
+data class ParentObject(var example: Example? = null,
+                        val finalExample: Example? = null)
 
 @Persist
 data class ListExample(var list: List<ParentObject> = arrayListOf(),
                        var listString: List<String> = arrayListOf(),
-                       var listSerializable: List<SimpleSerializable> = arrayListOf())
+                       var listSerializable: List<SimpleSerializable> = arrayListOf(),
+                       val finalList: List<ParentObject> = arrayListOf())
 
 @Persist
 data class MapExample(var map: Map<String, ParentObject> = mutableMapOf(),
                       var mapComplex: Map<ParentObject, ParentObject> = mutableMapOf(),
-                      var mapSerializable: Map<SimpleSerializable, Int> = mutableMapOf())
+                      var mapSerializable: Map<SimpleSerializable, Int> = mutableMapOf(),
+                      val finalMap: MutableMap<String, ParentObject> = mutableMapOf())
 
 class CustomStringPersister : BundlePersister<String> {
     override fun persist(obj: String?, bundle: Bundle, uniqueBaseKey: String) {

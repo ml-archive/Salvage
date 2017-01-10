@@ -42,6 +42,9 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
 
         val elements = ElementUtility.getAllElements(typeElement, manager)
 
+        // use map to find getter / setters
+        val elementMap = elements.associateBy { it.simpleName.toString() }
+
         elements.forEach {
 
             var isValidField = ElementUtility.isValidAllFields(true, it)
@@ -56,11 +59,28 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                     isValidField = it.getAnnotation(PersistField::class.java) != null
                 } else if (persistPolicy == PersistPolicy.PRIVATE_ACCESSORS_ONLY) {
                     isValidField = it.modifiers.contains(Modifier.PRIVATE)
+                } else if (persistPolicy == PersistPolicy.VISIBLE_FIELDS_ONLY) {
+                    isValidField = !it.modifiers.contains(Modifier.PRIVATE)
                 }
                 if (isValidField) {
                     val persistenceField = PersistenceField(manager, it, isPackagePrivateNotInSamePackage)
 
-                    persistenceFields.add(persistenceField)
+                    var success = true
+                    if (persistenceField.accessor is PrivateScopeAccessor) {
+                        val getterName = persistenceField.accessor.getterNameElement
+                        val setterName = persistenceField.accessor.setterNameElement
+
+                        if (elementMap[getterName] == null ||
+                                elementMap[setterName] == null && !it.modifiers.contains(Modifier.FINAL)) {
+                            manager.logWarning(PersistenceDefinition::class, "Cannot find the referenced getterName" +
+                                    "of $getterName or setterName of $setterName for $elementName. Ensure they are defined and visible. " +
+                                    "If this is not intended, try adding @PersistIgnore or Persist Policy ${PersistPolicy.VISIBLE_FIELDS_ONLY}." +
+                                    "This field will be ignored.")
+                            success = false
+                        }
+                    }
+
+                    if (success) persistenceFields.add(persistenceField)
                 }
             }
         }
