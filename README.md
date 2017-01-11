@@ -34,6 +34,8 @@ dependencies {
 Proguard configuration is:
 
 ```
+-keep interface com.fuzz.android.salvage.core.Persist
+-keep @com.fuzz.android.salvage.core.Persist class * { *; }
 -keep class * extends com.fuzz.android.salvage.BundlePersister { *; }
 ```
 Since we use reflection to instantiate persisters as we use them, we need to ensure
