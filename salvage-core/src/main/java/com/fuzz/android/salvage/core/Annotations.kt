@@ -44,4 +44,5 @@ annotation class PersistIgnore
 @Retention(AnnotationRetention.SOURCE)
 annotation class PersistField(val bundlePersister: KClass<*> = Any::class,
                               val getterName: String = "",
-                              val setterName: String = "")
+                              val setterName: String = "",
+                              val defaultValue: String = "")
