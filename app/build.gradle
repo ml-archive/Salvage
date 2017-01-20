@@ -4,7 +4,7 @@ apply plugin: 'com.getkeepsafe.dexcount'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.1"
+    buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "com.fuzz.android.salvager"
         minSdkVersion 9
@@ -25,30 +25,17 @@ android {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
 
     kapt project(":salvage-processor")
 
     compile project(":salvage")
     compile project(":salvage-core")
 
-    kaptTest project(":salvage-processor")
-
-    testCompile project(":salvage")
-    testCompile project(":salvage-core")
-
-    testCompile "org.robolectric:robolectric:3.1.4"
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-
     compile 'org.parceler:parceler-api:1.1.6'
     kapt 'org.parceler:parceler:1.1.6'
 
     compile 'frankiesardo:icepick:3.2.0'
     kapt 'frankiesardo:icepick-processor:3.2.0'
-}
-
-kapt {
-    generateStubs = true
 }
 repositories {
     mavenCentral()
