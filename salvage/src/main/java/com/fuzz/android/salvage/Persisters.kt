@@ -119,6 +119,6 @@ class SerializablePersister<T : Serializable> : BundlePersister<T> {
 
     @Suppress("UNCHECKED_CAST")
     override fun unpack(`object`: T?, bundle: Bundle, uniqueBaseKey: String): T? {
-        return bundle.getSerializable(uniqueBaseKey) as T?
+        return bundle.getSerializable(uniqueBaseKey) as T? ?: `object`
     }
 }

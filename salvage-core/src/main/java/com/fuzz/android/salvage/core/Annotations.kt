@@ -2,7 +2,7 @@ package com.fuzz.android.salvage.core
 
 import kotlin.reflect.KClass
 
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS)
 annotation class Persist(val persistPolicy: PersistPolicy = PersistPolicy.VISIBLE_FIELDS_AND_METHODS)
 
@@ -44,4 +44,5 @@ annotation class PersistIgnore
 @Retention(AnnotationRetention.SOURCE)
 annotation class PersistField(val bundlePersister: KClass<*> = Any::class,
                               val getterName: String = "",
-                              val setterName: String = "")
+                              val setterName: String = "",
+                              val defaultValue: String = "")

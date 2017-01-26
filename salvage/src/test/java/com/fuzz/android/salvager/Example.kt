@@ -14,7 +14,7 @@ import java.io.Serializable
 @Persist
 data class Example(@PersistField(bundlePersister = CustomStringPersister::class)
                    var name: String? = null,
-                   var age: Int? = null,
+                   @PersistField(defaultValue = "55") var age: Int? = null,
                    var charSequence: Array<CharSequence>? = null,
                    var serializable: SimpleSerializable? = null)
 

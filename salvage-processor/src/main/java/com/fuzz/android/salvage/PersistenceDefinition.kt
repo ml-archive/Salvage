@@ -3,12 +3,7 @@ package com.fuzz.android.salvage
 import com.fuzz.android.salvage.core.Persist
 import com.fuzz.android.salvage.core.PersistField
 import com.fuzz.android.salvage.core.PersistPolicy
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.FieldSpec
-import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterizedTypeName
-import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeSpec
+import com.squareup.javapoet.*
 import java.io.IOException
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
@@ -122,6 +117,10 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                         .endControlFlow()
                         .build())
 
+
+        // persist identity key
+        persistMethod.addStatement(CodeBlock.of("bundle.putString($uniqueBaseKey + $BASE_KEY, \"\")"))
+
         persistenceFields.forEach { it.writePersistence(persistMethod) }
 
         typeBuilder.addMethod(persistMethod.build())
@@ -136,12 +135,14 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                         .beginControlFlow("if (bundle == null)")
                         .addStatement("return null")
                         .endControlFlow()
-                        .beginControlFlow("if ($defaultParam == null)")
-                        .addStatement("$defaultParam = new \$T()", elementTypeName)
-                        .endControlFlow()
                         .build())
 
+        unpackMethod.beginControlFlow("if (bundle.containsKey($uniqueBaseKey + $BASE_KEY))")
+                .beginControlFlow("if ($defaultParam == null)")
+                .addStatement("$defaultParam = new \$T()", elementTypeName)
+                .endControlFlow()
         persistenceFields.forEach { it.writeUnpack(unpackMethod) }
+        unpackMethod.endControlFlow()
 
         unpackMethod.addStatement("return \$L", defaultParam)
 

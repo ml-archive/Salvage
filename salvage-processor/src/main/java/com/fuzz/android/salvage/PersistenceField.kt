@@ -42,6 +42,8 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
     val field: Field
 
+    val defaultValue: String
+
     init {
 
         // final fields won't get assigned to
@@ -63,6 +65,9 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
             getterName = annotation.getterName
             setterName = annotation.setterName
+            defaultValue = annotation.defaultValue
+        } else {
+            defaultValue = ""
         }
 
         if (isPackagePrivate) {
@@ -147,9 +152,22 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     fun writeUnpack(methodBuilder: MethodSpec.Builder) {
         elementTypeName?.let { typeName ->
             val bundleMethod = bundleMethodName
-            val block = CodeBlock.of("bundle.get\$L(\$L + \$L)", bundleMethod, uniqueBaseKey, keyFieldName)
             val accessedBlock: CodeBlock;
             if (nestedAccessor == null) {
+                val block: CodeBlock = if (elementTypeName?.isPrimitive ?: false
+                        || defaultValue.isNullOrEmpty().not()) {
+                    val existingBlock: CodeBlock
+                    if (defaultValue.isNullOrEmpty().not()) {
+                        existingBlock = CodeBlock.of(defaultValue)
+                    } else {
+                        existingBlock = accessor.get(CodeBlock.of(defaultParam), null)
+                    }
+
+                    CodeBlock.of("bundle.get\$L(\$L + \$L, \$L)", bundleMethod, uniqueBaseKey,
+                            keyFieldName, existingBlock)
+                } else {
+                    CodeBlock.of("bundle.get\$L(\$L + \$L)", bundleMethod, uniqueBaseKey, keyFieldName)
+                }
                 accessedBlock = accessor.set(block, CodeBlock.of(defaultParam))
                 methodBuilder.addStatement(accessedBlock)
             } else {
