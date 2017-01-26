@@ -17,7 +17,7 @@ Add the the artifacts to the project-level build.gradle:
 
 ```
 
-def salvage_version = "1.0.4"
+def salvage_version = "1.0.6"
 
 dependencies {
 
@@ -35,11 +35,12 @@ Proguard configuration is:
 
 ```
 -keep interface com.fuzz.android.salvage.core.Persist
--keep @com.fuzz.android.salvage.core.Persist class * { *; }
+-keep @com.fuzz.android.salvage.core.Persist class *
 -keep class * extends com.fuzz.android.salvage.BundlePersister { *; }
 ```
+
 Since we use reflection to instantiate persisters as we use them, we need to ensure
-the class is kept around.
+the generated class is kept around.
 
 ## How To Use
 
@@ -110,7 +111,7 @@ Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
 2. All primitive + boxed types, including nullable + not null Kotlin Types that Android's `Bundle` supports
 3. Nested `@Persist` objects
 3. `List` of all these kinds, `Map<K,V>` with any type of key or value. `Map<K, List<T>>` is not supported yet.
-4. We also support private fields (with getter/setters), package private fields in same package (or not via `PersistHelper`), and public
+4. We also support public, private fields (with getter/setters), and package private fields in same package (or not via a generated `PersistHelper`)
 5. Inherited fields are collected as well.
 
 ## Advanced Features

@@ -1,5 +1,6 @@
 package com.fuzz.android.salvage
 
+import javax.annotation.processing.FilerException
 import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
@@ -52,7 +53,10 @@ class ProcessorManager(val processingEnvironment: ProcessingEnvironment) : Handl
 
         persistenceDefinitions.forEach {
             writeBaseDefinition(it, this)
-            it.writePackageHelper(processingEnvironment)
+            try {
+                it.writePackageHelper(processingEnvironment)
+            } catch (e: FilerException) { /*Ignored intentionally to allow multi-round table generation*/
+            }
         }
     }
 }
