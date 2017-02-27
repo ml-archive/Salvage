@@ -1,4 +1,4 @@
-package com.fuzz.android.salvager.objects.java;
+package com.fuzz.android.salvager.objects.test.salvage;
 
 import com.fuzz.android.salvage.core.Persist;
 

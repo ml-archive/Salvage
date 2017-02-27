@@ -1,4 +1,4 @@
-package com.fuzz.android.salvager.objects.icepick;
+package com.fuzz.android.salvager.objects.test.icepick;
 
 import icepick.State;
 

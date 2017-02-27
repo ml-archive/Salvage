@@ -1,4 +1,4 @@
-package com.fuzz.android.salvager.objects.parceler;
+package com.fuzz.android.salvager.objects.test.parceler;
 
 import org.parceler.Parcel;
 

@@ -1,12 +1,7 @@
 package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterizedTypeName
-import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeSpec
-import com.squareup.javapoet.WildcardTypeName
+import com.squareup.javapoet.*
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 
@@ -43,18 +38,24 @@ class FieldHolder(val manager: ProcessorManager,
 
     }
 
-    fun writeForConstructor(constructorCode: MethodSpec.Builder) {
-        if (isSerializable || hasCustomConverter) {
-            val persisterTypeName = if (isSerializable) {
-                ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)
-            } else {
-                persisterDefinitionTypeName
+    fun writeForConstructor(constructorCode: MethodSpec.Builder): Boolean {
+        return when {
+            isSerializable || hasCustomConverter -> {
+                val persisterTypeName = if (isSerializable) {
+                    ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)
+                } else {
+                    persisterDefinitionTypeName
+                }
+                constructorCode.addStatement(CodeBlock.of("\$L = new \$T()",
+                        persisterFieldName, persisterTypeName))
+                true
             }
-            constructorCode.addStatement(CodeBlock.of("\$L = new \$T()",
-                    persisterFieldName, persisterTypeName))
-        } else if (!hasBundleMethod) {
-            constructorCode.addStatement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
-                    persisterFieldName, SALVAGER, basicElement))
+            !hasBundleMethod -> {
+                constructorCode.addStatement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
+                        persisterFieldName, SALVAGER, basicElement))
+                true
+            }
+            else -> false
         }
     }
 
@@ -99,9 +100,7 @@ abstract class Field(val manager: ProcessorManager,
 
     abstract fun initialize()
 
-    open fun writeForConstructor(constructorCode: MethodSpec.Builder) {
-        fieldHolder.writeForConstructor(constructorCode)
-    }
+    open fun writeForConstructor(constructorCode: MethodSpec.Builder) = fieldHolder.writeForConstructor(constructorCode)
 
     open fun writeFields(typeBuilder: TypeSpec.Builder) {
         fieldHolder.writeFields(typeBuilder)
@@ -230,9 +229,8 @@ class MapField(manager: ProcessorManager,
         keyFieldHolder.init()
     }
 
-    override fun writeForConstructor(constructorCode: MethodSpec.Builder) {
-        super.writeForConstructor(constructorCode)
-        keyFieldHolder.writeForConstructor(constructorCode)
+    override fun writeForConstructor(constructorCode: MethodSpec.Builder): Boolean {
+        return super.writeForConstructor(constructorCode) or keyFieldHolder.writeForConstructor(constructorCode)
     }
 
     override fun writeFields(typeBuilder: TypeSpec.Builder) {

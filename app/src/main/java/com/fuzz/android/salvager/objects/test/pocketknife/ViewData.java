@@ -1,16 +1,17 @@
-package com.fuzz.android.salvager.objects.java;
+package com.fuzz.android.salvager.objects.test.pocketknife;
 
-import com.fuzz.android.salvage.core.Persist;
+import pocketknife.SaveState;
 
 /**
  * Description:
  *
  * @author Andrew Grosner (fuzz)
  */
-@Persist
 public class ViewData {
 
+    @SaveState
     int visibility;
 
+    @SaveState
     boolean isShown;
 }

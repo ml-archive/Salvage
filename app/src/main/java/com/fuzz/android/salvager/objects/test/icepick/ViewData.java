@@ -1,16 +1,18 @@
-package com.fuzz.android.salvager.objects.parceler;
+package com.fuzz.android.salvager.objects.test.icepick;
 
-import org.parceler.Parcel;
+import icepick.State;
 
 /**
  * Description:
  *
  * @author Andrew Grosner (fuzz)
  */
-@Parcel
 public class ViewData {
 
+    @State
     int visibility;
 
+    @State
     boolean isShown;
+
 }

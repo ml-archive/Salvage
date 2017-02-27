@@ -2,13 +2,7 @@ package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
 import com.fuzz.android.salvage.core.PersistField
-import com.squareup.javapoet.ArrayTypeName
-import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.FieldSpec
-import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeSpec
+import com.squareup.javapoet.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -178,9 +172,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
         }
     }
 
-    fun writeForConstructor(constructorCode: MethodSpec.Builder) {
-        field.writeForConstructor(constructorCode)
-    }
+    fun writeForConstructor(constructorCode: MethodSpec.Builder) = field.writeForConstructor(constructorCode)
 
     fun writeFields(typeBuilder: TypeSpec.Builder) {
         typeBuilder.addField(FieldSpec.builder(String::class.java, keyFieldName,

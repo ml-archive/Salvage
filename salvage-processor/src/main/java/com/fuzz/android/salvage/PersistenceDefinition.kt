@@ -102,9 +102,10 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
         val constructorCode = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
 
-        persistenceFields.forEach { it.writeForConstructor(constructorCode) }
-
-        typeBuilder.addMethod(constructorCode.build())
+        // only add constructor if its actively used.
+        var count = 0
+        persistenceFields.forEach { if (it.writeForConstructor(constructorCode)) count++ }
+        if (count > 0) typeBuilder.addMethod(constructorCode.build())
 
         val persistMethod = MethodSpec.methodBuilder("persist")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)

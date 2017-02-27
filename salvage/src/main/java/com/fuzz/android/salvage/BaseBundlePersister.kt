@@ -1,7 +1,7 @@
 package com.fuzz.android.salvage
 
 import android.os.Bundle
-import java.util.ArrayList
+import java.util.*
 
 /**
  * Description: Provides some helper methods to the implementations in generated code.
@@ -18,6 +18,10 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
 
         private const val VALUE = ":value"
     }
+
+    fun persist(obj: T?, bundle: Bundle) = persist(obj, bundle, "")
+
+    fun unpack(`object`: T?, bundle: Bundle) = unpack(`object`, bundle, "")
 
     protected fun <T : Any> persistList(list: List<T>?, bundle: Bundle, uniqueBaseKey: String,
                                         fieldKey: String, bundlePersister: BundlePersister<T>) {
