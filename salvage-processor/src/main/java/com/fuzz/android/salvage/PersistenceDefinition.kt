@@ -25,14 +25,18 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
 
     val persistPolicy: PersistPolicy
 
+    val argument: Boolean
+
     init {
         setOutputClassName("Persister")
 
         val persistenceAnnotation: Persist? = typeElement.getAnnotation(Persist::class.java)
         if (persistenceAnnotation != null) {
             persistPolicy = persistenceAnnotation.persistPolicy
+            argument = persistenceAnnotation.argument
         } else {
             persistPolicy = PersistPolicy.VISIBLE_FIELDS_AND_METHODS
+            argument = false
         }
 
         val elements = ElementUtility.getAllElements(typeElement, manager)
@@ -107,24 +111,24 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
         persistenceFields.forEach { if (it.writeForConstructor(constructorCode)) count++ }
         if (count > 0) typeBuilder.addMethod(constructorCode.build())
 
-        val persistMethod = MethodSpec.methodBuilder("persist")
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addParameter(elementTypeName, defaultParam)
-                .addParameter(BUNDLE, "bundle")
-                .addParameter(String::class.java, uniqueBaseKey)
-                .addCode(CodeBlock.builder() // if objects null return
-                        .beginControlFlow("if (bundle == null || \$L == null)", defaultParam)
-                        .addStatement("return")
-                        .endControlFlow()
-                        .build())
+        if (!argument) {
+            val persistMethod = MethodSpec.methodBuilder("persist")
+                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                    .addParameter(elementTypeName, defaultParam)
+                    .addParameter(BUNDLE, "bundle")
+                    .addParameter(String::class.java, uniqueBaseKey)
+                    .addCode(CodeBlock.builder() // if objects null return
+                            .beginControlFlow("if (bundle == null || \$L == null)", defaultParam)
+                            .addStatement("return")
+                            .endControlFlow()
+                            .build())
 
 
-        // persist identity key
-        persistMethod.addStatement(CodeBlock.of("bundle.putString($uniqueBaseKey + $BASE_KEY, \"\")"))
-
-        persistenceFields.forEach { it.writePersistence(persistMethod) }
-
-        typeBuilder.addMethod(persistMethod.build())
+            // persist identity key
+            persistMethod.addStatement(CodeBlock.of("bundle.putString($uniqueBaseKey + $BASE_KEY, \"\")"))
+            persistenceFields.forEach { it.writePersistence(persistMethod) }
+            typeBuilder.addMethod(persistMethod.build())
+        }
 
         val unpackMethod = MethodSpec.methodBuilder("unpack")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -138,12 +142,17 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                         .endControlFlow()
                         .build())
 
-        unpackMethod.beginControlFlow("if (bundle.containsKey($uniqueBaseKey + $BASE_KEY))")
-                .beginControlFlow("if ($defaultParam == null)")
-                .addStatement("$defaultParam = new \$T()", elementTypeName)
-                .endControlFlow()
+        if (!argument) {
+            unpackMethod.beginControlFlow("if (bundle.containsKey($uniqueBaseKey + $BASE_KEY))")
+                    .beginControlFlow("if ($defaultParam == null)")
+                    .addStatement("$defaultParam = new \$T()", elementTypeName)
+                    .endControlFlow()
+        }
         persistenceFields.forEach { it.writeUnpack(unpackMethod) }
-        unpackMethod.endControlFlow()
+
+        if (!argument) {
+            unpackMethod.endControlFlow()
+        }
 
         unpackMethod.addStatement("return \$L", defaultParam)
 

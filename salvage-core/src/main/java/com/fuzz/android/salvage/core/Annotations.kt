@@ -4,7 +4,12 @@ import kotlin.reflect.KClass
 
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS)
-annotation class Persist(val persistPolicy: PersistPolicy = PersistPolicy.VISIBLE_FIELDS_AND_METHODS)
+annotation class Persist(val persistPolicy: PersistPolicy = PersistPolicy.VISIBLE_FIELDS_AND_METHODS,
+                         /**
+                          * If true, we treat it as an android fragment, so that we will not
+                          * generate a persist method and instantiate the object if null.
+                          */
+                         val argument: Boolean = false)
 
 enum class PersistPolicy {
 

@@ -23,6 +23,10 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
 
     fun unpack(`object`: T?, bundle: Bundle) = unpack(`object`, bundle, "")
 
+    override fun persist(obj: T?, bundle: Bundle, uniqueBaseKey: String) {
+        throw IllegalAccessError("Tried to access $javaClass.persist() on an argument generated class.")
+    }
+
     protected fun <T : Any> persistList(list: List<T>?, bundle: Bundle, uniqueBaseKey: String,
                                         fieldKey: String, bundlePersister: BundlePersister<T>) {
         if (list != null) {

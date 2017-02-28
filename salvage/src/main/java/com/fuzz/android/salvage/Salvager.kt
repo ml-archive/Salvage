@@ -58,10 +58,9 @@ object Salvager {
     @JvmStatic
     @JvmOverloads
     fun <T : Any> onSaveInstanceState(obj: T?, bundle: Bundle?, uniqueBaseKey: String = "") {
-        if (obj == null || bundle == null) {
-            return
+        if (obj != null && bundle != null) {
+            getBundlePersister(obj.javaClass).persist(obj, bundle, uniqueBaseKey)
         }
-        getBundlePersister(obj.javaClass).persist(obj, bundle, uniqueBaseKey)
     }
 
     /**
@@ -93,10 +92,10 @@ object Salvager {
     @JvmStatic
     @JvmOverloads
     fun <T : Any> onRestoreInstanceState(obj: T?, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
-        return if (obj == null || bundle == null) {
-            null
-        } else {
+        return if (obj != null && bundle != null) {
             getBundlePersister(obj.javaClass).unpack(obj, bundle, uniqueBaseKey)
+        } else {
+            null
         }
     }
 
@@ -112,11 +111,7 @@ object Salvager {
     @JvmStatic
     @JvmOverloads
     fun <T : Any> onRestoreInstanceState(obj: Class<T>, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
-        return if (bundle == null) {
-            null
-        } else {
-            getBundlePersister(obj).unpack(null, bundle, uniqueBaseKey)
-        }
+        return bundle?.let { getBundlePersister(obj).unpack(null, bundle, uniqueBaseKey) }
     }
 
     /**
