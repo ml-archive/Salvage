@@ -176,7 +176,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
 
     fun writeFields(typeBuilder: TypeSpec.Builder) {
         typeBuilder.addField(FieldSpec.builder(String::class.java, keyFieldName,
-                Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+                Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                 .initializer("$BASE_KEY + \$S", elementName)
                 .build())
 

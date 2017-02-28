@@ -11,11 +11,10 @@ import com.fuzz.android.salvage.core.PersistPolicy
 @Persist(argument = true, persistPolicy = PersistPolicy.ANNOTATIONS_ONLY)
 class DummyFragment : Fragment() {
 
-
     @PersistField
     var title = ""
 
-    @PersistField
+    @PersistField(getterName = "getShouldLoad", setterName = "setShouldLoad")
     var shouldLoad = false
 
 

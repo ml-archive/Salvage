@@ -48,6 +48,20 @@ object Salvager {
     }
 
     /**
+     * Load your arguments state.
+     * [obj] the Fragment or Activity object to restore.
+     * [bundle] the bundle to restore. If null we ignore restoring.
+     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
+     * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
+     * By default you should not use this method without saving it to a bundle first.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun <T : Any> loadArguments(obj: T, bundle: Bundle?, uniqueBaseKey: String = "") {
+        onRestoreInstanceState(obj, bundle, uniqueBaseKey)
+    }
+
+    /**
      * Save your state here.
      * [obj] the nullable object to save. If null we ignore saving
      * [bundle] the bundle to save. If null we ignore saving

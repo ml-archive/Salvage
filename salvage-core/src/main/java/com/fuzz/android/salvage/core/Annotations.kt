@@ -46,7 +46,7 @@ annotation class PersistIgnore
  * [bundlePersister] Allows you to specify a Bundle Persister that overrides default implementation.
  */
 @Target(AnnotationTarget.FIELD)
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 annotation class PersistField(val bundlePersister: KClass<*> = Any::class,
                               val getterName: String = "",
                               val setterName: String = "",
