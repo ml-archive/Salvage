@@ -116,28 +116,31 @@ object Salvager {
 
     /**
      * Restore your state here.
-     * [obj] the Class of the object to restore. Will return a new instance.
+     * [clazz] the Class of the object to restore. Will return a new instance if [obj] is null.
      * [bundle] the bundle to restore. If null we ignore restoring.
+     * [obj] the optional instance object to include that can be reused.
      * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
      * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
      * By default you should not use this method without a corresponding call to [onSaveInstanceState]
      */
     @JvmStatic
     @JvmOverloads
-    fun <T : Any> onRestoreInstanceState(obj: Class<T>, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
-        return bundle?.let { getBundlePersister(obj).unpack(null, bundle, uniqueBaseKey) }
+    fun <T : Any> onRestoreInstanceState(clazz: Class<T>, bundle: Bundle?, obj: T? = null, uniqueBaseKey: String = ""): T? {
+        return bundle?.let { getBundlePersister(clazz).unpack(obj, bundle, uniqueBaseKey) }
     }
 
     /**
      * Restore your state here.
-     * [obj] the Class of the object to restore. Will return a new instance.
+     * [klazz] the Class of the object to restore. Will return a new instance if [obj] is null.
      * [bundle] the bundle to restore. If null we ignore restoring.
+     * [obj] the optional instance object to include that can be reused.
      * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
      * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
      * By default you should not use this method without a corresponding call to [onSaveInstanceState]
      */
-    fun <T : Any> onRestoreInstanceState(obj: KClass<T>, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
-        return onRestoreInstanceState(obj.java, bundle, uniqueBaseKey)
+    fun <T : Any> onRestoreInstanceState(klazz: KClass<T>, bundle: Bundle?, obj: T? = null,
+                                         uniqueBaseKey: String = ""): T? {
+        return onRestoreInstanceState(klazz.java, bundle, obj, uniqueBaseKey)
     }
 
 }
