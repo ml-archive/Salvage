@@ -109,7 +109,7 @@ object Salvager {
         return if (obj != null && bundle != null) {
             getBundlePersister(obj.javaClass).unpack(obj, bundle, uniqueBaseKey)
         } else {
-            null
+            obj
         }
     }
 
