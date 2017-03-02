@@ -51,29 +51,21 @@ object Salvager {
      * Load your arguments state.
      * [obj] the Fragment or Activity object to restore.
      * [bundle] the bundle to restore. If null we ignore restoring.
-     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
-     * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
-     * By default you should not use this method without saving it to a bundle first.
      */
     @JvmStatic
-    @JvmOverloads
-    fun <T : Any> loadArguments(obj: T, bundle: Bundle?, uniqueBaseKey: String = "") {
-        onRestoreInstanceState(obj, bundle, uniqueBaseKey)
+    fun <T : Any> loadArguments(obj: T, bundle: Bundle?) {
+        onRestoreInstanceState(obj, bundle)
     }
 
     /**
      * Save your state here.
      * [obj] the nullable object to save. If null we ignore saving
      * [bundle] the bundle to save. If null we ignore saving
-     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
-     * by prepending this key to the base. This is to ensure we can store any nested object in same bundle.
-     * By default you should not use this method without a corresponding call to [onRestoreInstanceState]
      */
     @JvmStatic
-    @JvmOverloads
-    fun <T : Any> onSaveInstanceState(obj: T?, bundle: Bundle?, uniqueBaseKey: String = "") {
+    fun <T : Any> onSaveInstanceState(obj: T?, bundle: Bundle?) {
         if (obj != null && bundle != null) {
-            getBundlePersister(obj.javaClass).persist(obj, bundle, uniqueBaseKey)
+            getBundlePersister(obj.javaClass).persist(obj, bundle)
         }
     }
 
@@ -81,16 +73,12 @@ object Salvager {
      * Save your state here.
      * [obj] the nullable object to save. If null we ignore saving
      * [bundle] the bundle to save. If null we ignore saving
-     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
-     * by prepending this key to the base. This is to ensure we can store any nested object in same bundle.
-     * By default you should not use this method without a corresponding call to [onRestoreInstanceState]
      */
     @JvmStatic
-    @JvmOverloads
-    fun <T : Any> onSaveInstanceState(obj: T?, uniqueBaseKey: String = ""): Bundle {
+    fun <T : Any> onSaveInstanceState(obj: T?): Bundle {
         val bundle = Bundle()
         if (obj != null) {
-            getBundlePersister(obj.javaClass).persist(obj, bundle, uniqueBaseKey)
+            getBundlePersister(obj.javaClass).persist(obj, bundle)
         }
         return bundle
     }
@@ -99,15 +87,11 @@ object Salvager {
      * Restore your state here.
      * [obj] the nullable object to restore. If null we ignore restoring. So ensure its not null.
      * [bundle] the bundle to restore. If null we ignore restoring.
-     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
-     * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
-     * By default you should not use this method without a corresponding call to [onSaveInstanceState]
      */
     @JvmStatic
-    @JvmOverloads
-    fun <T : Any> onRestoreInstanceState(obj: T?, bundle: Bundle?, uniqueBaseKey: String = ""): T? {
+    fun <T : Any> onRestoreInstanceState(obj: T?, bundle: Bundle?): T? {
         return if (obj != null && bundle != null) {
-            getBundlePersister(obj.javaClass).unpack(obj, bundle, uniqueBaseKey)
+            getBundlePersister(obj.javaClass).unpack(obj, bundle)
         } else {
             obj
         }
@@ -119,14 +103,11 @@ object Salvager {
      * [clazz] the Class of the object to restore. Will return a new instance if [obj] is null.
      * [bundle] the bundle to restore. If null we ignore restoring.
      * [obj] the optional instance object to include that can be reused.
-     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
-     * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
-     * By default you should not use this method without a corresponding call to [onSaveInstanceState]
      */
     @JvmStatic
     @JvmOverloads
-    fun <T : Any> onRestoreInstanceState(clazz: Class<T>, bundle: Bundle?, obj: T? = null, uniqueBaseKey: String = ""): T? {
-        return bundle?.let { getBundlePersister(clazz).unpack(obj, bundle, uniqueBaseKey) }
+    fun <T : Any> onRestoreInstanceState(clazz: Class<T>, bundle: Bundle?, obj: T? = null): T? {
+        return bundle?.let { getBundlePersister(clazz).unpack(obj, bundle) }
     }
 
     /**
@@ -134,13 +115,9 @@ object Salvager {
      * [klazz] the Class of the object to restore. Will return a new instance if [obj] is null.
      * [bundle] the bundle to restore. If null we ignore restoring.
      * [obj] the optional instance object to include that can be reused.
-     * [uniqueBaseKey] default is "". If specified it will adjust every key of every object saved
-     * by prepending this key to the base. This is to ensure we can restore any nested object in same bundle.
-     * By default you should not use this method without a corresponding call to [onSaveInstanceState]
      */
-    fun <T : Any> onRestoreInstanceState(klazz: KClass<T>, bundle: Bundle?, obj: T? = null,
-                                         uniqueBaseKey: String = ""): T? {
-        return onRestoreInstanceState(klazz.java, bundle, obj, uniqueBaseKey)
+    fun <T : Any> onRestoreInstanceState(klazz: KClass<T>, bundle: Bundle?, obj: T? = null): T? {
+        return onRestoreInstanceState(klazz.java, bundle, obj)
     }
 
 }

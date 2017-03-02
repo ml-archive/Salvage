@@ -27,23 +27,28 @@ android {
 dependencies {
     compile group: 'javax.annotation', name: 'jsr250-api', version: '1.0'
 
-    compile "com.android.support:appcompat-v7:25.1.1"
 
     kapt project(":salvage-processor")
 
     compile project(":salvage")
     compile project(":salvage-core")
 
+    compile 'com.android.support:appcompat-v7:25.2.0'
     compile 'org.parceler:parceler-api:1.1.6'
-    kapt 'org.parceler:parceler:1.1.6'
-
     compile 'frankiesardo:icepick:3.2.0'
-    kapt 'frankiesardo:icepick-processor:3.2.0'
-
     compile 'com.vikingsen:pocketknife-core:3.2.0'
+    kapt 'org.parceler:parceler:1.1.6'
+    kapt 'frankiesardo:icepick-processor:3.2.0'
     kapt 'com.vikingsen:pocketknife-compiler:3.2.0'
+}
+
+dexcount {
+    includeClasses = true
+    includeFieldCount= false
+    orderByMethodCount = true
 
 }
-repositories {
-    mavenCentral()
+
+kapt {
+    generateStubs = true
 }
