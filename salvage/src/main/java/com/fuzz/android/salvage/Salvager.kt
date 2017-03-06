@@ -38,7 +38,7 @@ object Salvager {
                 persister = Class.forName(tClass.name + "Persister").newInstance() as BundlePersister<*>
             } catch (e: Exception) {
                 throw RuntimeException("Could not find generated BundlePersister for: $tClass. " +
-                        "Ensure you specified the @Persist annotation.")
+                        "Ensure you specified the @Persist or @PersistArguments annotation.")
             }
 
             persisterMap.put(tClass, persister)

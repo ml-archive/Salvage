@@ -59,7 +59,7 @@ or in Java
 
 // must provide visible default constructor
 @Persist
-public class User {
+public class ViewData {
 
     private String name;
 
@@ -84,11 +84,13 @@ public class User {
 
 ```
 
+By default, `@Persist` will grab all visible fields and accessors (get/set, kotlin properties). If it cannot find the associated getter/setter, Salvage will throw a warning in the logs.
+
 Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
 
 ```kotlin
 
-    private var user: User? = null
+    private var viewData: ViewData? = null
 
     override fun onSaveInstanceState(bundle: Bundle) {
         super.onSaveInstanceState(bundle)
@@ -105,6 +107,51 @@ Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
       }
 ```
 
+It is preferred to isolate ViewState from your class that you use it in (inner class), to compartmentalize the data.
+
+## Fragment Arguments
+
+Salvage also provides any easy way to define fragment arguments in your class.
+
+```kotlin
+@PersistArguments
+class MyFragment : Fragment() {
+
+  @PersistField
+  int index;
+
+  @PersistField
+  String url;
+
+}
+```
+
+By default, by using `@PersistArguments`, the lookup is **explicit** annotations.
+
+To use in fragment:
+
+```kotlin
+
+companion object {
+
+  @JvmStatic
+  fun newInstance(index: Int, url: String) MyFragment().apply {
+    arguments = Bundle().apply {
+      putInt(MyFragmentPersister.key_index, index)
+      putString(MyFragmentPersister.key_url, url)
+    }
+  }
+}
+
+override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+  super.onViewCreated(view, savedInstanceState)
+  Salvager.loadArguments(this, arguments)
+}
+
+```
+
+Salvage generates `key` fields for you as a convenience. First build project and then you can start using the keys to help populate your Fragment class!
+
 ## Supported Types:
 
 1. Serializable
@@ -118,7 +165,7 @@ Then in your `Fragment`, `Activity`, or other class that uses `Bundle` states:
 
 ### Ignoring Fields
 
-If you have fields you wish to exclude from `@Persist`, use the `@PersistIgnore`:
+If you have fields you wish to exclude from `@Persist`/`@PersistArguments`, use the `@PersistIgnore`:
 
 ```
 @PersistIgnore

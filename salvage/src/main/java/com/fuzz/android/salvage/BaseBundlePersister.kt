@@ -27,14 +27,15 @@ abstract class BaseBundlePersister<T> : BundlePersister<T> {
         throw IllegalAccessError("Tried to access $javaClass.persist() on an argument generated class.")
     }
 
-    protected fun <T : Any> persistList(list: List<T>?, bundle: Bundle, uniqueBaseKey: String,
+    protected fun <T : Any> persistList(source: Iterable<T>?, bundle: Bundle, uniqueBaseKey: String,
                                         fieldKey: String, bundlePersister: BundlePersister<T>) {
-        if (list != null) {
-            val count = list.size
-            bundle.putInt(getCountKey(fieldKey, uniqueBaseKey), count)
-            (0..count - 1).forEach {
-                bundlePersister.persist(list[it], bundle, "$uniqueBaseKey$fieldKey$it")
+        if (source != null) {
+            var count = 0
+            source.forEach {
+                bundlePersister.persist(it, bundle, "$uniqueBaseKey$fieldKey$it")
+                count++
             }
+            bundle.putInt(getCountKey(fieldKey, uniqueBaseKey), count)
         }
     }
 
