@@ -72,9 +72,9 @@ class PersistenceTest {
     fun testCanFindInnerClass() {
 
         val inner = InnerClassExample.Inner()
-        Salvager.onSaveInstanceState(inner, Bundle(), "")
+        Salvager.onSaveInstanceState(inner, Bundle())
 
-        val restored = Salvager.onRestoreInstanceState(InnerClassExample.Inner::class, Bundle(), "")
+        val restored = Salvager.onRestoreInstanceState(InnerClassExample.Inner::class, Bundle())
         assertNotNull(restored)
     }
 }
