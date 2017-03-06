@@ -52,9 +52,7 @@ object Salvager {
      * [bundle] the bundle to restore. If null we ignore restoring.
      */
     @JvmStatic
-    fun <T : Any> loadArguments(obj: T, bundle: Bundle?) {
-        onRestoreInstanceState(obj, bundle)
-    }
+    fun <T : Any> loadArguments(obj: T, bundle: Bundle?) = onRestoreInstanceState(obj, bundle)
 
     /**
      * Save your state here.
