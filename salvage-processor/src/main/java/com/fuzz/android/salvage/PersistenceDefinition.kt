@@ -105,7 +105,7 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
 
         typeBuilder.addField(FieldSpec.builder(String::class.java, BASE_KEY, Modifier.PRIVATE,
                 Modifier.STATIC, Modifier.FINAL)
-                .initializer("\"$packageName.${elementName}Persister:\"")
+                .initializer("\"${elementName}Persister:\"")
                 .build())
 
         persistenceFields.forEach { it.writeFields(typeBuilder) }

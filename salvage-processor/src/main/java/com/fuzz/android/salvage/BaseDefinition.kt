@@ -4,7 +4,7 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
-import java.util.Arrays
+import java.util.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
@@ -32,7 +32,7 @@ abstract class BaseDefinition : TypeDefinition {
     constructor(element: ExecutableElement, processorManager: ProcessorManager) {
         this.manager = processorManager
         this.element = element
-        packageName = manager.elements.getPackageOf(element).toString()
+        packageName = manager.packageNameOf(element)
         elementName = element.simpleName.toString()
 
         try {
@@ -53,7 +53,7 @@ abstract class BaseDefinition : TypeDefinition {
     constructor(element: Element, processorManager: ProcessorManager) {
         this.manager = processorManager
         this.element = element
-        packageName = manager.elements.getPackageOf(element).toString()
+        packageName = manager.packageNameOf(element)
         try {
             val typeMirror: TypeMirror
             if (element is ExecutableElement) {
@@ -87,7 +87,7 @@ abstract class BaseDefinition : TypeDefinition {
         elementClassName = ClassName.get(typeElement)
         elementTypeName = TypeName.get(element.asType())
         elementName = element.simpleName.toString()
-        packageName = manager.elements.getPackageOf(element).toString()
+        packageName = manager.packageNameOf(element)
     }
 
     protected open fun getElementClassName(element: Element): ClassName? {

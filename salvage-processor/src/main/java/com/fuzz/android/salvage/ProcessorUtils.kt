@@ -7,6 +7,7 @@ import com.squareup.javapoet.TypeSpec
 import java.io.IOException
 import java.io.Serializable
 import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
@@ -125,3 +126,5 @@ fun implementsClass(processingEnvironment: ProcessingEnvironment, fqTn: String, 
 
 fun isSerializable(processorManager: ProcessorManager, element: TypeElement?)
         = implementsClass(processorManager.processingEnvironment, Serializable::class.java.name, element)
+
+fun ProcessorManager.packageNameOf(element: Element) = elements.getPackageOf(element).qualifiedName.toString()
