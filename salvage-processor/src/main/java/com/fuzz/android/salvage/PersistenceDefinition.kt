@@ -1,6 +1,7 @@
 package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
+import com.fuzz.android.salvage.core.PersistArguments
 import com.fuzz.android.salvage.core.PersistField
 import com.fuzz.android.salvage.core.PersistPolicy
 import com.squareup.javapoet.*
@@ -33,10 +34,16 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
         val persistenceAnnotation: Persist? = typeElement.getAnnotation(Persist::class.java)
         if (persistenceAnnotation != null) {
             persistPolicy = persistenceAnnotation.persistPolicy
-            argument = persistenceAnnotation.argument
-        } else {
-            persistPolicy = PersistPolicy.VISIBLE_FIELDS_AND_METHODS
             argument = false
+        } else {
+            val persistArgument: PersistArguments? = typeElement.getAnnotation(PersistArguments::class.java);
+            if (persistArgument != null) {
+                persistPolicy = persistArgument.persistPolicy;
+                argument = true;
+            } else {
+                persistPolicy = PersistPolicy.VISIBLE_FIELDS_AND_METHODS
+                argument = false
+            }
         }
 
         val elements = ElementUtility.getAllElements(typeElement, manager)

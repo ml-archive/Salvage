@@ -35,8 +35,7 @@ object Salvager {
         var persister: BundlePersister<*>? = persisterMap[tClass]
         if (persister == null) {
             try {
-                persister = Class.forName(tClass.name + "Persister")
-                        .newInstance() as BundlePersister<*>
+                persister = Class.forName(tClass.name + "Persister").newInstance() as BundlePersister<*>
             } catch (e: Exception) {
                 throw RuntimeException("Could not find generated BundlePersister for: $tClass. " +
                         "Ensure you specified the @Persist annotation.")
@@ -63,11 +62,7 @@ object Salvager {
      * [bundle] the bundle to save. If null we ignore saving
      */
     @JvmStatic
-    fun <T : Any> onSaveInstanceState(obj: T?, bundle: Bundle?) {
-        if (obj != null && bundle != null) {
-            getBundlePersister(obj.javaClass).persist(obj, bundle)
-        }
-    }
+    fun <T : Any> onSaveInstanceState(obj: T?, bundle: Bundle?) = bundle?.let { obj?.bundlePersister?.persist(obj, bundle) }
 
     /**
      * Save your state here.
@@ -75,13 +70,7 @@ object Salvager {
      * [bundle] the bundle to save. If null we ignore saving
      */
     @JvmStatic
-    fun <T : Any> onSaveInstanceState(obj: T?): Bundle {
-        val bundle = Bundle()
-        if (obj != null) {
-            getBundlePersister(obj.javaClass).persist(obj, bundle)
-        }
-        return bundle
-    }
+    fun <T : Any> onSaveInstanceState(obj: T?) = Bundle().apply { obj?.bundlePersister?.persist(obj, this) }
 
     /**
      * Restore your state here.
@@ -89,14 +78,7 @@ object Salvager {
      * [bundle] the bundle to restore. If null we ignore restoring.
      */
     @JvmStatic
-    fun <T : Any> onRestoreInstanceState(obj: T?, bundle: Bundle?): T? {
-        return if (obj != null && bundle != null) {
-            getBundlePersister(obj.javaClass).unpack(obj, bundle)
-        } else {
-            obj
-        }
-    }
-
+    fun <T : Any> onRestoreInstanceState(obj: T?, bundle: Bundle?) = if (obj != null && bundle != null) obj.bundlePersister.unpack(obj, bundle) else obj
 
     /**
      * Restore your state here.
@@ -106,9 +88,14 @@ object Salvager {
      */
     @JvmStatic
     @JvmOverloads
-    fun <T : Any> onRestoreInstanceState(clazz: Class<T>, bundle: Bundle?, obj: T? = null): T? {
-        return bundle?.let { getBundlePersister(clazz).unpack(obj, bundle) }
-    }
+    fun <T : Any> onRestoreInstanceState(clazz: Class<T>, bundle: Bundle?, obj: T? = null) = bundle?.let { getBundlePersister(clazz).unpack(obj, it) }
+
+    /**
+     * Restore your state here more concisely using reified params.
+     * [bundle] the bundle to restore. If null we ignore restoring.
+     * [obj] the optional instance object to include that can be reused.
+     */
+    inline fun <reified T : Any> onRestoreInstanceState(bundle: Bundle?, obj: T? = null) = onRestoreInstanceState(T::class.java, bundle, obj)
 
     /**
      * Restore your state here.
@@ -116,8 +103,6 @@ object Salvager {
      * [bundle] the bundle to restore. If null we ignore restoring.
      * [obj] the optional instance object to include that can be reused.
      */
-    fun <T : Any> onRestoreInstanceState(klazz: KClass<T>, bundle: Bundle?, obj: T? = null): T? {
-        return onRestoreInstanceState(klazz.java, bundle, obj)
-    }
+    fun <T : Any> onRestoreInstanceState(klazz: KClass<T>, bundle: Bundle?, obj: T? = null) = onRestoreInstanceState(klazz.java, bundle, obj)
 
 }

@@ -132,23 +132,21 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
     }
 
     fun writePersistence(methodBuilder: MethodSpec.Builder) {
-        elementTypeName?.let { typeName ->
-            val block = accessor.get(CodeBlock.of(defaultParam), null)
-            if (nestedAccessor != null) {
-                methodBuilder.addCode(nestedAccessor.get(block, null))
-            } else {
-                methodBuilder.addStatement("bundle.put\$L(\$L + \$L, \$L)",
-                        bundleMethodName, uniqueBaseKey, keyFieldName, block)
-            }
+        val block = accessor.get(CodeBlock.of(defaultParam), null)
+        if (nestedAccessor != null) {
+            methodBuilder.addCode(nestedAccessor.get(block, null))
+        } else {
+            methodBuilder.addStatement("bundle.put\$L(\$L + \$L, \$L)",
+                    bundleMethodName, uniqueBaseKey, keyFieldName, block)
         }
     }
 
     fun writeUnpack(methodBuilder: MethodSpec.Builder) {
         elementTypeName?.let { typeName ->
             val bundleMethod = bundleMethodName
-            val accessedBlock: CodeBlock;
+            val accessedBlock: CodeBlock
             if (nestedAccessor == null) {
-                val block: CodeBlock = if (elementTypeName?.isPrimitive ?: false
+                val block: CodeBlock = if (typeName.isPrimitive
                         || defaultValue.isNullOrEmpty().not()) {
                     val existingBlock: CodeBlock
                     if (defaultValue.isNullOrEmpty().not()) {

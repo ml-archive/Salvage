@@ -1,7 +1,7 @@
 package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
-import com.google.common.collect.Sets
+import com.fuzz.android.salvage.core.PersistArguments
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
@@ -25,28 +25,28 @@ interface Handler {
 /**
  * Description: The base handler than provides common callbacks into processing annotated top-level elements
  */
-abstract class BaseHandler<AnnotationClass : Annotation> : Handler {
+abstract class BaseHandler : Handler {
 
     override fun handle(processorManager: ProcessorManager, roundEnvironment: RoundEnvironment) {
-        val annotatedElements = Sets.newHashSet(roundEnvironment.getElementsAnnotatedWith(annotationClass))
+        val annotatedElements = annotationClass.map { roundEnvironment.getElementsAnnotatedWith(it) }.flatten()
         processElements(processorManager, annotatedElements)
-        if (annotatedElements.size > 0) {
+        if (annotatedElements.isNotEmpty()) {
             annotatedElements.forEach { onProcessElement(processorManager, it) }
         }
     }
 
-    protected abstract val annotationClass: Class<AnnotationClass>
+    protected abstract val annotationClass: Array<Class<out Annotation>>
 
-    open fun processElements(processorManager: ProcessorManager, annotatedElements: MutableSet<Element>) {
+    open fun processElements(processorManager: ProcessorManager, annotatedElements: List<Element>) {
 
     }
 
     protected abstract fun onProcessElement(processorManager: ProcessorManager, element: Element)
 }
 
-class PersistenceHandler : BaseHandler<Persist>() {
-    override val annotationClass: Class<Persist>
-        get() = Persist::class.java
+class PersistenceHandler : BaseHandler() {
+    override val annotationClass: Array<Class<out Annotation>>
+        get() = arrayOf(Persist::class.java, PersistArguments::class.java)
 
     override fun onProcessElement(processorManager: ProcessorManager, element: Element) {
         val persistenceDefinition = PersistenceDefinition(element as TypeElement, processorManager)
