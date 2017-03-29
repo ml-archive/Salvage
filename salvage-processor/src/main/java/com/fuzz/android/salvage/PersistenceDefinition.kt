@@ -128,8 +128,7 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                         `return`("")
                     }.end()
                     statement("bundle.putString($uniqueBaseKey + $BASE_KEY, \"\")")
-                    persistenceFields.forEach { it.writePersistence(this@`fun`) }
-                    this
+                    apply { persistenceFields.forEach { it.writePersistence(this@`fun`) } }
                 }
             }
 
@@ -145,8 +144,7 @@ class PersistenceDefinition(typeElement: TypeElement, manager: ProcessorManager)
                         `if`("$defaultParam == null") {
                             statement("$defaultParam = new \$T()", elementTypeName)
                         }.end()
-                        persistenceFields.forEach { it.writeUnpack(this) }
-                        this
+                        apply { persistenceFields.forEach { it.writeUnpack(this) } }
                     }.end()
                 } else {
                     persistenceFields.forEach { it.writeUnpack(this) }
