@@ -1,10 +1,8 @@
 package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
-import com.grosner.kpoet.L
-import com.grosner.kpoet.statement
+import com.grosner.kpoet.*
 import com.squareup.javapoet.*
-import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 
 /**
@@ -61,15 +59,14 @@ class FieldHolder(val manager: ProcessorManager,
         }
     }
 
-    fun writeFields(typeBuilder: TypeSpec.Builder) {
+    fun writeFields(typeBuilder: TypeSpec.Builder) = typeBuilder.apply {
         if (!hasBundleMethod || hasCustomConverter) {
             val persisterTypeName = if (isSerializable) {
                 ParameterizedTypeName.get(SERIALIZABLE_PERSISTER, basicTypeName)
             } else {
                 persisterDefinitionTypeName
             }
-            typeBuilder.addField(persisterTypeName, persisterFieldName,
-                    Modifier.PRIVATE, Modifier.FINAL)
+            field(persisterTypeName!!, persisterFieldName) { addModifiers(public, final) }
         }
     }
 }

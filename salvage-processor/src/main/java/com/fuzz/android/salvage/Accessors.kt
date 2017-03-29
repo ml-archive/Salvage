@@ -3,6 +3,7 @@ package com.fuzz.android.salvage
 import com.google.common.collect.Maps
 import com.grosner.kpoet.CodeMethod
 import com.grosner.kpoet.L
+import com.grosner.kpoet.code
 import com.grosner.kpoet.statement
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
@@ -110,51 +111,34 @@ class PrivateScopeAccessor(propertyName: String?, getterSetter: GetterSetter? = 
         }
     }
 
-    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
-        val codeBlock: CodeBlock.Builder = CodeBlock.builder()
-        existingBlock?.let { codeBlock.add("\$L.", existingBlock) }
-        return codeBlock.add("\$L()", getterNameElement)
-                .build()
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?) = code {
+        existingBlock?.let { this@code.add("$existingBlock.") }
+        add("$getterNameElement()")
     }
 
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
-        val codeBlock: CodeBlock.Builder = CodeBlock.builder()
-        baseVariableName?.let { codeBlock.add("\$L.", baseVariableName) }
-        return codeBlock.add("\$L(\$L)", setterNameElement, existingBlock)
-                .build()
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?) = code {
+        baseVariableName?.let { add("$baseVariableName.") }
+        add("$setterNameElement($existingBlock)")
     }
-
-
 }
 
 class PackagePrivateScopeAccessor(propertyName: String, packageName: String,
                                   tableClassName: String)
     : Accessor(propertyName) {
 
-    val helperClassName: ClassName
-    val internalHelperClassName: ClassName
+    val helperClassName = ClassName.get(packageName, "${tableClassName}_$classSuffix")!!
 
-    init {
-        helperClassName = ClassName.get(packageName, "${tableClassName}_$classSuffix")
-        internalHelperClassName = ClassName.get(packageName, "${tableClassName}_$classSuffix")
-    }
+    override fun get(existingBlock: CodeBlock?, baseVariableName: String?)
+            = CodeBlock.of("\$T.get${propertyName.capitalizeFirstLetter()}($existingBlock)",
+            helperClassName)
 
-    override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
-        return CodeBlock.of("\$T.get\$L(\$L)", internalHelperClassName,
-                propertyName.capitalizeFirstLetter(),
-                existingBlock)
-    }
-
-    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
-        return CodeBlock.of("\$T.set\$L(\$L, \$L)", helperClassName,
-                propertyName.capitalizeFirstLetter(),
-                baseVariableName,
-                existingBlock)
-    }
+    override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?)
+            = CodeBlock.of("\$T.set${propertyName.capitalizeFirstLetter()}($baseVariableName, $existingBlock)",
+            helperClassName)
 
     companion object {
 
-        val classSuffix = "PersistenceHelper"
+        const val classSuffix = "PersistenceHelper"
 
         private val methodWrittenMap = Maps.newHashMap<ClassName, MutableList<String>>()
 
