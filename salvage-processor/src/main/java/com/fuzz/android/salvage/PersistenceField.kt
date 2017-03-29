@@ -2,6 +2,8 @@ package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
 import com.fuzz.android.salvage.core.PersistField
+import com.grosner.kpoet.L
+import com.grosner.kpoet.statement
 import com.squareup.javapoet.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
@@ -161,7 +163,7 @@ class PersistenceField(manager: ProcessorManager, element: Element, isPackagePri
                     CodeBlock.of("bundle.get\$L(\$L + \$L)", bundleMethod, uniqueBaseKey, keyFieldName)
                 }
                 accessedBlock = accessor.set(block, CodeBlock.of(defaultParam))
-                methodBuilder.addStatement(accessedBlock)
+                methodBuilder.statement(accessedBlock.L)
             } else {
                 accessedBlock = nestedAccessor.set(accessor.get(CodeBlock.of(defaultParam), null),
                         CodeBlock.of(defaultParam))

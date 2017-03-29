@@ -5,6 +5,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile "com.google.auto.service:auto-service:1.0-rc2"
     compile 'com.squareup:javapoet:1.8.0'
+    compile 'com.github.agrosner:KPoet:fd5346a85f'
 
     compile project(":salvage-core")
 }

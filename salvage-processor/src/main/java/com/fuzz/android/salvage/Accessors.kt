@@ -1,9 +1,14 @@
 package com.fuzz.android.salvage
 
 import com.google.common.collect.Maps
+import com.grosner.kpoet.CodeMethod
+import com.grosner.kpoet.L
+import com.grosner.kpoet.statement
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
-import java.util.ArrayList
+import java.util.*
+import java.util.List
+import java.util.Map
 
 /**
  * Description: Base interface for accessing fields
@@ -30,7 +35,7 @@ abstract class Accessor(val propertyName: String?) {
         }
     }
 
-    protected fun appendAccess(codeAccess: CodeBlock.Builder.() -> Unit): CodeBlock {
+    protected fun appendAccess(codeAccess: CodeMethod): CodeBlock {
         val codeBuilder = CodeBlock.builder()
         prependPropertyName(codeBuilder)
         codeAccess(codeBuilder)
@@ -195,8 +200,7 @@ class NestedAccessor(val persisterFieldName: String,
                      propertyName: String? = null) : Accessor(propertyName) {
     override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return appendAccess {
-            addStatement("\$L.persist(\$L, bundle, \$L + $keyFieldName)", persisterFieldName,
-                    existingBlock, uniqueBaseKey)
+            statement("$persisterFieldName.persist($existingBlock, bundle, $uniqueBaseKey + $keyFieldName)")
         }
     }
 
@@ -204,10 +208,9 @@ class NestedAccessor(val persisterFieldName: String,
             : CodeBlock {
 
         return appendAccess {
-            addStatement(baseFieldAcessor.set(
-                    CodeBlock.of("\$L.unpack(\$L, bundle, \$L + $keyFieldName)",
-                            persisterFieldName, existingBlock, uniqueBaseKey),
-                    baseVariableName))
+            statement(baseFieldAcessor.set(
+                    CodeBlock.of("$persisterFieldName.unpack($existingBlock, bundle," +
+                            " $uniqueBaseKey + $keyFieldName)"), baseVariableName).L)
         }
     }
 }
@@ -219,17 +222,17 @@ class ListAccessor(val keyFieldName: String,
 
     override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return appendAccess {
-            addStatement("persistList(\$L, bundle, $uniqueBaseKey, $keyFieldName, " +
-                    "$persisterFieldName)", existingBlock)
+            statement("persistList($existingBlock, bundle, $uniqueBaseKey, $keyFieldName, " +
+                    "$persisterFieldName)")
         }
     }
 
     override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return appendAccess {
-            addStatement(baseFieldAcessor.set(
-                    CodeBlock.of("restoreList(\$L, bundle, $uniqueBaseKey, $keyFieldName, " +
-                            "$persisterFieldName)", existingBlock),
-                    baseVariableName))
+            statement(baseFieldAcessor.set(
+                    CodeBlock.of("restoreList($existingBlock, bundle, $uniqueBaseKey, $keyFieldName, " +
+                            "$persisterFieldName)"),
+                    baseVariableName).L)
         }
     }
 }
@@ -243,17 +246,17 @@ class MapAccessor(val keyFieldName: String,
 
     override fun get(existingBlock: CodeBlock?, baseVariableName: String?): CodeBlock {
         return appendAccess {
-            addStatement("persistMap(\$L, bundle, $uniqueBaseKey, $keyFieldName, " +
-                    "$keyPersisterFieldName, $persisterFieldName)", existingBlock)
+            statement("persistMap($existingBlock, bundle, $uniqueBaseKey, $keyFieldName, " +
+                    "$keyPersisterFieldName, $persisterFieldName)")
         }
     }
 
     override fun set(existingBlock: CodeBlock?, baseVariableName: CodeBlock?): CodeBlock {
         return appendAccess {
-            addStatement(baseFieldAcessor.set(
+            statement(baseFieldAcessor.set(
                     CodeBlock.of("restoreMap(\$L, bundle, $uniqueBaseKey, $keyFieldName, " +
                             "$keyPersisterFieldName, $persisterFieldName)", existingBlock),
-                    baseVariableName))
+                    baseVariableName).L)
         }
     }
 }

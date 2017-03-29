@@ -1,6 +1,8 @@
 package com.fuzz.android.salvage
 
 import com.fuzz.android.salvage.core.Persist
+import com.grosner.kpoet.L
+import com.grosner.kpoet.statement
 import com.squareup.javapoet.*
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -46,13 +48,13 @@ class FieldHolder(val manager: ProcessorManager,
                 } else {
                     persisterDefinitionTypeName
                 }
-                constructorCode.addStatement(CodeBlock.of("\$L = new \$T()",
-                        persisterFieldName, persisterTypeName))
+                constructorCode.statement(CodeBlock.of("\$L = new \$T()",
+                        persisterFieldName, persisterTypeName).L)
                 true
             }
             !hasBundleMethod -> {
-                constructorCode.addStatement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
-                        persisterFieldName, SALVAGER, basicElement))
+                constructorCode.statement(CodeBlock.of("\$L = \$T.getBundlePersister(\$T.class)",
+                        persisterFieldName, SALVAGER, basicElement).L)
                 true
             }
             else -> false
